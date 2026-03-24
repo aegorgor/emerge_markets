@@ -1,0 +1,52 @@
+AgentGroups:
+  - &exchange 1
+  - &forecaster 6
+  - &storage 7
+
+Contracts:
+##########################
+# -- Forecasting --      #
+##########################
+  - SenderId: *storage
+    ReceiverId: *forecaster
+    ProductName: ForecastRegistration
+    FirstDeliveryTime: -30
+    Every: 1 year
+
+  - SenderId: *storage
+    ReceiverId: *forecaster
+    ProductName: SensitivityRequest
+    FirstDeliveryTime: -21
+    Every: 1 hour
+
+  - SenderId: *forecaster
+    ReceiverId: *storage
+    ProductName: SensitivityForecast
+    FirstDeliveryTime: -19
+    Every: 1 hour
+
+  - SenderId: *storage
+    ReceiverId: *forecaster
+    ProductName: NetAward
+    FirstDeliveryTime: 6
+    Every: 1 hour
+##########################
+# -- Bidding --          #
+##########################
+  - SenderId: *exchange
+    ReceiverId: [*storage, *forecaster]
+    ProductName: GateClosureInfo
+    FirstDeliveryTime: -30
+    Every: 1 hour
+
+  - SenderId: *storage
+    ReceiverId: *exchange
+    ProductName: Bids
+    FirstDeliveryTime: 0
+    Every: 1 hour
+
+  - SenderId: *exchange
+    ReceiverId: *storage
+    ProductName: Awards
+    FirstDeliveryTime: 4
+    Every: 1 hour

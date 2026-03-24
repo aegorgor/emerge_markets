@@ -1,0 +1,30 @@
+Contracts:
+  - SenderId: 1
+    ReceiverId: 101
+    ProductName: GateClosureInfo
+    FirstDeliveryTime: -30
+    Every: 1 hour
+
+  - SenderId: 6
+    ReceiverId: 101
+    ProductName: ForecastRequest
+    FirstDeliveryTime: -26
+    Every: 1 hour
+
+  - SenderId: 101
+    ReceiverId: 6
+    ProductName: BidsForecast
+    FirstDeliveryTime: -21
+    Every: 1 hour
+
+  - SenderId: 101
+    ReceiverId: 1
+    ProductName: Bids
+    FirstDeliveryTime: 0
+    Every: 1 hour
+
+  - SenderId: 1
+    ReceiverId: 101
+    ProductName: Awards
+    FirstDeliveryTime: 4
+    Every: 1 hour

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(amiris --version)",
+      "Bash(python plot_income_comparison.py)"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+Agents:
+  - Type: DemandTrader
+    Id: 100
+    Attributes:
+      Loads:
+        - ValueOfLostLoad: 3000.0
+          DemandSeries: "./timeseries/load.csv"
+
+  - Id: 101
+    Type: DemandTrader
+    Attributes:
+      Loads:
+        - ValueOfLostLoad: 10000.0
+          DemandSeries: timeseries/demand/demand_low_income.csv
+
+  - Id: 102
+    Type: DemandTrader
+    Attributes:
+      Loads:
+        - ValueOfLostLoad: 10000.0
+          DemandSeries: timeseries/demand/demand_high_income.csv

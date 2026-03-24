@@ -1,0 +1,257 @@
+Agents:
+  - Type: RenewableTrader
+    Id: 11
+    Attributes:
+      ShareOfRevenues: 0.0
+
+  - Type: NoSupportTrader
+    Id: 12
+    Attributes:
+      ShareOfRevenues: 0.0
+
+  - Type: SystemOperatorTrader
+    Id: 13
+
+  - Type: SupportPolicy
+    Id: 90
+    Attributes:
+      SetSupportData:
+        - PolicySet: PvFit
+          FIT:
+            TsFit: 120.0
+        - PolicySet: WindOnFit
+          FIT:
+            TsFit: 85.0
+        - PolicySet: RunOfRiver
+          FIT:
+            TsFit: 100.0
+        - PolicySet: PvMpvarCluster1
+          MPVAR:
+            Lcoe: 98.63
+        - PolicySet: PvMpvarCluster2
+          MPVAR:
+            Lcoe: 183.4
+        - PolicySet: PvMpvarCluster3
+          MPVAR:
+            Lcoe: 224.8
+        - PolicySet: PvMpvarCluster4
+          MPVAR:
+            Lcoe: 286.67
+        - PolicySet: PvMpvarCluster5
+          MPVAR:
+            Lcoe: 329.45
+        - PolicySet: WindOnMpvarCluster1
+          MPVAR:
+            Lcoe: 73.09
+        - PolicySet: WindOnMpvarCluster2
+          MPVAR:
+            Lcoe: 79.67
+        - PolicySet: WindOnMpvarCluster3
+          MPVAR:
+            Lcoe: 87.27
+        - PolicySet: WindOnMpvarCluster4
+          MPVAR:
+            Lcoe: 96.68
+        - PolicySet: WindOnMpvarCluster5
+          MPVAR:
+            Lcoe: 100.46
+        - PolicySet: WindOffMpvarCluster1
+          MPVAR:
+            Lcoe: 154
+        - PolicySet: WindOffMpvarCluster2
+          MPVAR:
+            Lcoe: 174.5
+        - PolicySet: WindOffMpvarCluster3
+          MPVAR:
+            Lcoe: 194
+        - PolicySet: WindOffMpvarCluster4
+          MPVAR:
+            Lcoe: 194
+
+  - Type: VariableRenewableOperator
+    Id: 10
+    Attributes:
+      PolicySet: PvFit
+      EnergyCarrier: PV
+      SupportInstrument: FIT
+      InstalledPowerInMW: 32068.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/solar_profile.csv"
+      
+  - Type: VariableRenewableOperator
+    Id: 20
+    Attributes:
+      PolicySet: WindOnFit
+      SupportInstrument: FIT
+      EnergyCarrier: WindOn
+      InstalledPowerInMW: 24199
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_onshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 50
+    Attributes:
+      PolicySet: RunOfRiver
+      SupportInstrument: FIT
+      EnergyCarrier: RunOfRiver
+      InstalledPowerInMW: 13926
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/run_of_river_profile.csv"
+
+  - Type: Biogas
+    Id: 52
+    Attributes:
+      PolicySet: Biogas
+      EnergyCarrier: Biogas
+      InstalledPowerInMW: 7566
+      OpexVarInEURperMWH: 0.0
+      DispatchTimeSeries: "./timeseries/biomass_profile.csv"
+      OperationMode: FROM_FILE
+
+  - Type: VariableRenewableOperator
+    Id: 53
+    Attributes:
+      EnergyCarrier: Other #otherres
+      InstalledPowerInMW: 578
+      OpexVarInEURperMWH: 1.2
+      YieldProfile: "./timeseries/other_res_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 60
+    Attributes:
+      PolicySet: PvMpvarCluster1
+      EnergyCarrier: PV
+      SupportInstrument: MPVAR
+      InstalledPowerInMW: 6106.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/solar_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 61
+    Attributes:
+      PolicySet: PvMpvarCluster2
+      EnergyCarrier: PV
+      SupportInstrument: MPVAR
+      InstalledPowerInMW: 2353
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/solar_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 62
+    Attributes:
+      PolicySet: PvMpvarCluster3
+      EnergyCarrier: PV
+      SupportInstrument: MPVAR
+      InstalledPowerInMW: 2084.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/solar_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 63
+    Attributes:
+      PolicySet: PvMpvarCluster4
+      EnergyCarrier: PV
+      SupportInstrument: MPVAR
+      InstalledPowerInMW: 1285.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/solar_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 64
+    Attributes:
+      PolicySet: PvMpvarCluster5
+      EnergyCarrier: PV
+      SupportInstrument: MPVAR
+      InstalledPowerInMW: 102.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/solar_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 70
+    Attributes:
+      PolicySet: WindOnMpvarCluster1
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOn
+      InstalledPowerInMW: 2556.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_onshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 71
+    Attributes:
+      PolicySet: WindOnMpvarCluster2
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOn
+      InstalledPowerInMW: 5709.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_onshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 72
+    Attributes:
+      PolicySet: WindOnMpvarCluster3
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOn
+      InstalledPowerInMW: 8542.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_onshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 73
+    Attributes:
+      PolicySet: WindOnMpvarCluster4
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOn
+      InstalledPowerInMW: 4945.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_onshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 74
+    Attributes:
+      PolicySet: WindOnMpvarCluster5
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOn
+      InstalledPowerInMW: 8723.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_onshore_profile.csv"
+      
+  - Type: VariableRenewableOperator
+    Id: 80
+    Attributes:
+      PolicySet: WindOffMpvarCluster1
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOff
+      InstalledPowerInMW: 507.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_offshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 81
+    Attributes:
+      PolicySet: WindOffMpvarCluster2
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOff
+      InstalledPowerInMW: 63.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_offshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 82
+    Attributes:
+      PolicySet: WindOffMpvarCluster3
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOff
+      InstalledPowerInMW: 786.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_offshore_profile.csv"
+
+  - Type: VariableRenewableOperator
+    Id: 83
+    Attributes:
+      PolicySet: WindOffMpvarCluster4
+      SupportInstrument: MPVAR
+      EnergyCarrier: WindOff
+      InstalledPowerInMW: 3695.
+      OpexVarInEURperMWH: 0.0
+      YieldProfile: "./timeseries/wind_offshore_profile.csv"

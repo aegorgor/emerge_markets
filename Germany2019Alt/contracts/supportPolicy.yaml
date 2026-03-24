@@ -1,0 +1,48 @@
+AgentGroups:
+  - &exchange 1
+  - &policy 90
+  - &allMarketers [11, 12, 13]
+  - &supportedMarketers [11, 13]
+
+Contracts:
+  - SenderId: *supportedMarketers
+    ReceiverId: *policy
+    ProductName: SupportInfoRequest
+    FirstDeliveryTime: -35
+    Every: 1 year
+
+  - SenderId: *policy
+    ReceiverId: *supportedMarketers
+    ProductName: SupportInfo
+    FirstDeliveryTime: -33
+    Every: 1 year
+
+  - SenderId: *allMarketers
+    ReceiverId: *policy
+    ProductName: YieldPotential
+    FirstDeliveryTime: 1
+    Every: 1 hour
+
+  - SenderId: *exchange
+    ReceiverId: *policy
+    ProductName: Awards
+    FirstDeliveryTime: 4
+    Every: 1 hour
+
+  - SenderId: *supportedMarketers
+    ReceiverId: *policy
+    ProductName: SupportPayoutRequest
+    FirstDeliveryTime: 2626200
+    Every: 1 month
+
+  - SenderId: *policy
+    ReceiverId: *supportedMarketers
+    ProductName: SupportPayout
+    FirstDeliveryTime: 2626202
+    Every: 1 month
+
+  - SenderId: *policy
+    ReceiverId: *policy
+    ProductName: MarketValueCalculation
+    FirstDeliveryTime: 2626204
+    Every: 1 month
