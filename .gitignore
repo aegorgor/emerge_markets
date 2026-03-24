@@ -3,9 +3,6 @@ Demand Data/baseline_metadata_and_annual_results.csv
 Demand Data/demand_high_income.csv
 Demand Data/demand_low_income.csv
 
-# Large JAR
-*.jar
-
 # Large hourly timeseries profiles
 Germany2019Alt/timeseries/biomass_profile.csv
 Germany2019Alt/timeseries/load.csv
