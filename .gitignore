@@ -1,1 +1,18 @@
-"\Demand Data\baseline_metadata_and_annual_results.csv"
+# Large data files
+Demand Data/baseline_metadata_and_annual_results.csv
+Demand Data/demand_high_income.csv
+Demand Data/demand_low_income.csv
+
+# Large JAR
+*.jar
+
+# Large hourly timeseries profiles
+Germany2019Alt/timeseries/biomass_profile.csv
+Germany2019Alt/timeseries/load.csv
+Germany2019Alt/timeseries/other_res_profile.csv
+Germany2019Alt/timeseries/run_of_river_profile.csv
+Germany2019Alt/timeseries/solar_profile.csv
+Germany2019Alt/timeseries/wind_offshore_profile.csv
+Germany2019Alt/timeseries/wind_onshore_profile.csv
+Germany2019Alt/timeseries/demand/demand_high_income.csv
+Germany2019Alt/timeseries/demand/demand_low_income.csv
