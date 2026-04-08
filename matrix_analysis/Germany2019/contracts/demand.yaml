@@ -1,0 +1,35 @@
+AgentGroups:
+  - &exchange 1
+  - &forecaster 6
+  - &demandTrader 100
+
+Contracts:
+  - SenderId: *exchange
+    ReceiverId: *demandTrader
+    ProductName: GateClosureInfo
+    FirstDeliveryTime: -30
+    Every: 1 hour
+
+  - SenderId: *forecaster
+    ReceiverId: *demandTrader
+    ProductName: ForecastRequest
+    FirstDeliveryTime: -26
+    Every: 1 hour
+
+  - SenderId: *demandTrader
+    ReceiverId: *forecaster
+    ProductName: BidsForecast
+    FirstDeliveryTime: -21
+    Every: 1 hour
+
+  - SenderId: *demandTrader
+    ReceiverId: *exchange
+    ProductName: Bids
+    FirstDeliveryTime: 0
+    Every: 1 hour
+
+  - SenderId: *exchange
+    ReceiverId: *demandTrader
+    ProductName: Awards
+    FirstDeliveryTime: 4
+    Every: 1 hour

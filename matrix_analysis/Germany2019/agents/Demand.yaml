@@ -1,0 +1,7 @@
+Agents:
+  - Type: DemandTrader
+    Id: 100
+    Attributes:
+      Loads:
+        - ValueOfLostLoad: 3000.0
+          DemandSeries: "./timeseries/load.csv"

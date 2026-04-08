@@ -1,0 +1,46 @@
+Agents:
+  - Type: DayAheadMarketSingleZone
+    Id: 1
+    Attributes:
+      Clearing: &clearingParameters
+        DistributionMethod: SAME_SHARES
+      GateClosureInfoOffsetInSeconds: 31
+
+  - Type: CarbonMarket
+    Id: 3
+    Attributes:
+      OperationMode: FIXED
+      Co2Prices: "./timeseries/co2_price.csv"
+
+  # Sources:
+  # LIGNITE and NUCLEAR are own estimates.
+  # Fuel costs https://www.bmwi.de/Redaktion/DE/Artikel/Energie/energiedaten-gesamtausgabe.html, Table 26
+  # Transportation costs https://www.bmwi.de/Redaktion/DE/Publikationen/Studien/definition-und-monitoring-der-versorgungssicherheit-an-den-europaeischen-strommaerkten.pdf?__blob=publicationFile&v=18, p. 163
+  - Type: FuelsMarket
+    Id: 4
+    Attributes:
+      FuelPrices:
+        - FuelType: NUCLEAR
+          Price: 2.00
+          ConversionFactor: 1.0
+        - FuelType: LIGNITE
+          Price: 5.00
+          ConversionFactor: 1.0
+        - FuelType: HARD_COAL
+          Price: "./timeseries/hard_coal_price.csv"
+          ConversionFactor: 1.0
+        - FuelType: NATURAL_GAS
+          Price: "./timeseries/natural_gas_price.csv"
+          ConversionFactor: 1.0
+        - FuelType: OIL
+          Price: "./timeseries/oil_price.csv"
+          ConversionFactor: 1.0
+
+  - Type: SensitivityForecaster
+    Id: 6
+    Attributes:
+      Clearing: *clearingParameters
+      ForecastPeriodInHours: 730
+      MultiplierEstimation:
+        InitialEstimateWeight: 6
+        DecayInterval: 168

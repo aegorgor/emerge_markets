@@ -1,0 +1,343 @@
+Agents:
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.848
+      DischargingEfficiency: 0.7781
+      EnergyContentUpperLimitInMWH: 1147.0
+      GrossChargingPowerInMW: 400.0
+      InitialEnergyContentInMWH: 510.0
+      NetDischargingPowerInMW: 370.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 33.92
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 700
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.8746
+      DischargingEfficiency: 0.8746
+      EnergyContentUpperLimitInMWH: 590.0
+      GrossChargingPowerInMW: 153.0
+      InitialEnergyContentInMWH: 260.0
+      NetDischargingPowerInMW: 165.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 13.770000000000001
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 701
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MAX_PROFIT
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: STORAGE_CONTENT_VALUE
+    Device:
+      ChargingEfficiency: 0.8735
+      DischargingEfficiency: 0.8511
+      EnergyContentUpperLimitInMWH: 9470.0
+      GrossChargingPowerInMW: 2340.0
+      InitialEnergyContentInMWH: 4160.0
+      NetDischargingPowerInMW: 2336.2
+    StateDiscretisation:
+      EnergyResolutionInMWH: 204.39000000000001
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 702
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.9
+      DischargingEfficiency: 0.8439
+      EnergyContentUpperLimitInMWH: 1725.0
+      GrossChargingPowerInMW: 360.0
+      InitialEnergyContentInMWH: 750.0
+      NetDischargingPowerInMW: 358.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 32.4
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 703
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.8947
+      DischargingEfficiency: 0.8947
+      EnergyContentUpperLimitInMWH: 693.0
+      GrossChargingPowerInMW: 143.0
+      InitialEnergyContentInMWH: 300.0
+      NetDischargingPowerInMW: 145.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 13.156
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 704
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.8748
+      DischargingEfficiency: 0.8146
+      EnergyContentUpperLimitInMWH: 1103.0
+      GrossChargingPowerInMW: 231.1
+      InitialEnergyContentInMWH: 480.0
+      NetDischargingPowerInMW: 219.1
+    StateDiscretisation:
+      EnergyResolutionInMWH: 20.2177
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 705
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.9056
+      DischargingEfficiency: 0.8558
+      EnergyContentUpperLimitInMWH: 3584.0
+      GrossChargingPowerInMW: 661.0
+      InitialEnergyContentInMWH: 1570.0
+      NetDischargingPowerInMW: 623.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 59.85999999999999
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 706
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.8343
+      DischargingEfficiency: 0.8343
+      EnergyContentUpperLimitInMWH: 460.0
+      GrossChargingPowerInMW: 80.0
+      InitialEnergyContentInMWH: 200.0
+      NetDischargingPowerInMW: 79.8
+    StateDiscretisation:
+      EnergyResolutionInMWH: 6.959999999999999
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 707
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.7737
+      DischargingEfficiency: 0.7737
+      EnergyContentUpperLimitInMWH: 264.0
+      GrossChargingPowerInMW: 46.0
+      InitialEnergyContentInMWH: 120.0
+      NetDischargingPowerInMW: 43.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 3.772
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 708
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.8646
+      DischargingEfficiency: 0.8646
+      EnergyContentUpperLimitInMWH: 563.0
+      GrossChargingPowerInMW: 90.0
+      InitialEnergyContentInMWH: 250.0
+      NetDischargingPowerInMW: 90.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 8.01
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 709
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.8717
+      DischargingEfficiency: 0.8035
+      EnergyContentUpperLimitInMWH: 2990.0
+      GrossChargingPowerInMW: 462.8
+      InitialEnergyContentInMWH: 1320.0
+      NetDischargingPowerInMW: 457.3
+    StateDiscretisation:
+      EnergyResolutionInMWH: 40.343599999999995
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 710
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MAX_PROFIT
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: STORAGE_CONTENT_VALUE
+    Device:
+      ChargingEfficiency: 0.8798
+      DischargingEfficiency: 0.8798
+      EnergyContentUpperLimitInMWH: 6823.0
+      GrossChargingPowerInMW: 1078.2
+      InitialEnergyContentInMWH: 2990.0
+      NetDischargingPowerInMW: 1002.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 97.038
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 711
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.876
+      DischargingEfficiency: 0.876
+      EnergyContentUpperLimitInMWH: 3950.0
+      GrossChargingPowerInMW: 327.0
+      InitialEnergyContentInMWH: 1730.0
+      NetDischargingPowerInMW: 493.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 28.6452
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 712
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MAX_PROFIT
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: STORAGE_CONTENT_VALUE
+    Device:
+      ChargingEfficiency: 0.92
+      DischargingEfficiency: 0.8769
+      EnergyContentUpperLimitInMWH: 13235.0
+      GrossChargingPowerInMW: 1540.0
+      InitialEnergyContentInMWH: 5810.0
+      NetDischargingPowerInMW: 1532.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 141.68
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 713
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.95
+      DischargingEfficiency: 0.95
+      EnergyContentUpperLimitInMWH: 3650.0
+      GrossChargingPowerInMW: 360.0
+      InitialEnergyContentInMWH: 1600.0
+      NetDischargingPowerInMW: 360.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 34.2
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 714
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 24
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.86
+      DischargingEfficiency: 0.86
+      EnergyContentUpperLimitInMWH: 4234.0
+      GrossChargingPowerInMW: 242.0
+      InitialEnergyContentInMWH: 1860.0
+      NetDischargingPowerInMW: 289.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 20.812
+      PlanningHorizonInHours: 168
+      Type: STATE_OF_CHARGE
+  Id: 715
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 168
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.91
+      DischargingEfficiency: 0.91
+      EnergyContentUpperLimitInMWH: 50050.0
+      GrossChargingPowerInMW: 450.0
+      InitialEnergyContentInMWH: 21980.0
+      NetDischargingPowerInMW: 525.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 40.95
+      PlanningHorizonInHours: 730
+      Type: STATE_OF_CHARGE
+  Id: 716
+  Type: GenericFlexibilityTrader
+- Attributes:
+    Assessment:
+      Type: MIN_SYSTEM_COST
+    Bidding:
+      SchedulingHorizonInHours: 168
+      Type: ENSURE_DISPATCH
+    Device:
+      ChargingEfficiency: 0.91
+      DischargingEfficiency: 0.91
+      EnergyContentUpperLimitInMWH: 123200.0
+      GrossChargingPowerInMW: 224.0
+      InitialEnergyContentInMWH: 54100.0
+      NetDischargingPowerInMW: 238.0
+    StateDiscretisation:
+      EnergyResolutionInMWH: 20.384
+      PlanningHorizonInHours: 730
+      Type: STATE_OF_CHARGE
+  Id: 717
+  Type: GenericFlexibilityTrader

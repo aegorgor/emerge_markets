@@ -1,0 +1,141 @@
+AgentGroups:
+  - &builders  [2000, 2001, 2002, 2003, 2004, 2005]
+  - &traders   [1000, 1001, 1002, 1003, 1004, 1005]
+  - &operators [500, 501, 502, 503, 504, 505]
+  - &exchange 1
+  - &carbonMarket 3
+  - &fuelsMarket 4
+  - &forecaster 6
+
+Contracts:
+#################################
+# -- PlantBuildingManagement -- #
+#################################
+  - SenderId: *builders
+    ReceiverId: *operators
+    ProductName: PowerPlantPortfolio
+    FirstDeliveryTime: -60
+    Every: 1 year
+
+##############################
+# -- Forecast Preparation -- #
+##############################
+  - SenderId: *forecaster
+    ReceiverId: *traders
+    ProductName: ForecastRequest
+    FirstDeliveryTime: -26
+    Every: 1 hour
+
+  - SenderId: *traders
+    ReceiverId: *operators
+    ProductName: ForecastRequestForward
+    FirstDeliveryTime: -25
+    Every: 1 hour
+
+  - SenderId: *operators
+    ReceiverId: *fuelsMarket
+    ProductName: FuelPriceForecastRequest
+    FirstDeliveryTime: -24
+    Every: 1 hour
+
+  - SenderId: *operators
+    ReceiverId: *carbonMarket
+    ProductName: Co2PriceForecastRequest
+    FirstDeliveryTime: -24
+    Every: 1 hour    
+
+  - SenderId: *fuelsMarket
+    ReceiverId: *operators
+    ProductName: FuelPriceForecast
+    FirstDeliveryTime: -23
+    Every: 1 hour
+
+  - SenderId: *carbonMarket
+    ReceiverId: *operators
+    ProductName: Co2PriceForecast
+    FirstDeliveryTime: -23
+    Every: 1 hour
+
+  - SenderId: *operators
+    ReceiverId: *traders
+    ProductName: MarginalCostForecast
+    FirstDeliveryTime: -22
+    Every: 1 hour
+
+  - SenderId: *traders
+    ReceiverId: *forecaster
+    ProductName: BidsForecast
+    FirstDeliveryTime: -21
+    Every: 1 hour
+
+#################
+# -- Bidding -- #
+#################
+  - SenderId: *exchange
+    ReceiverId: *traders
+    ProductName: GateClosureInfo
+    FirstDeliveryTime: -30
+    Every: 1 hour
+
+  - SenderId: *traders
+    ReceiverId: *operators
+    ProductName: GateClosureForward
+    FirstDeliveryTime: -9
+    Every: 1 hour
+
+  - SenderId: *operators
+    ReceiverId: *fuelsMarket
+    ProductName: FuelPriceRequest
+    FirstDeliveryTime: -3
+    Every: 1 hour
+
+  - SenderId: *operators
+    ReceiverId: *carbonMarket
+    ProductName: Co2PriceRequest
+    FirstDeliveryTime: -3
+    Every: 1 hour
+
+  - SenderId: *fuelsMarket
+    ReceiverId: *operators
+    ProductName: FuelPrice
+    FirstDeliveryTime: -2
+    Every: 1 hour
+
+  - SenderId: *carbonMarket
+    ReceiverId: *operators
+    ProductName: Co2Price
+    FirstDeliveryTime: -2
+    Every: 1 hour
+
+  - SenderId: *operators
+    ReceiverId: *traders
+    ProductName: MarginalCost
+    FirstDeliveryTime: -1
+    Every: 1 hour
+
+  - SenderId: *traders
+    ReceiverId: *exchange
+    ProductName: Bids
+    FirstDeliveryTime: 0
+    Every: 1 hour
+    
+####################
+# -- Evaluation -- #
+####################  
+  - SenderId: *exchange
+    ReceiverId: *traders
+    ProductName: Awards
+    FirstDeliveryTime: 4
+    Every: 1 hour
+
+  - SenderId: *traders
+    ReceiverId: *operators
+    ProductName: DispatchAssignment
+    FirstDeliveryTime: 5
+    Every: 1 hour
+
+  - SenderId: *traders
+    ReceiverId: *operators
+    ProductName: Payout
+    FirstDeliveryTime: 6
+    Every: 1 hour
