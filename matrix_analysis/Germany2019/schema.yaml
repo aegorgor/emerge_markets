@@ -1,0 +1,3537 @@
+# SPDX-FileCopyrightText: 2025 German Aerospace Center <amiris@dlr.de>
+#
+# SPDX-License-Identifier: Apache-2.0
+Metadata:
+  name: "AMIRIS"
+  version: "4.0.0"
+  title: "open Agent-based Market model for the Investigation of Renewable and Integrated energy Systems"
+  homepage: "https://helmholtz.software/software/amiris"
+  documentation: "https://gitlab.com/dlr-ve/esy/amiris/amiris/-/wikis/home"
+  sourceCode: "https://gitlab.com/dlr-ve/esy/amiris/amiris"
+  publisher: "German Aerospace Center (DLR)"
+  publisherLogo: https://www.dlr.de/static/media/Logo-en.bc10c5b6.svg
+  contact: "amiris@dlr.de"
+  fundingAgency: None
+  fundingAgencyLogo: None
+  grantNo: None
+  contributors: None
+
+JavaPackages:
+  Agents:
+    - "agents"
+  DataItems:
+    - "communications.message"
+  Portables:
+    - "communications"
+    - "agents"
+    - "de.dlr.gitlab.fame.time"
+
+AgentTypes:
+  DayAheadMarketSingleZone:
+    Attributes:
+      Clearing: &DAM_G_Clearing
+        AttributeType: block
+        List: false
+        Mandatory: true
+        MetaData:
+          description: "Group of market clearing specifications"
+        NestedAttributes:
+          DistributionMethod:
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Energy assignment strategy for price-setting bids with the same price"
+            Values:
+              SAME_SHARES:
+                MetaData:
+                  description: "Bids with the same price are all awarded their same relative share."
+              FIRST_COME_FIRST_SERVE:
+                MetaData:
+                  description: "Bids are awarded in the order they appear after sorting the order book. Discouraged!"
+              RANDOMIZE:
+                MetaData:
+                  description: "Bids with the same price are awarded in a random order."
+          ShortagePriceMethod:
+            AttributeType: enum
+            Mandatory: false
+            List: false
+            help: "Defines which price to use in case of shortage events (default: ScarcityPrice)"
+            MetaData:
+              description: "Which price to use in case of scarcity (i.e. when valuable demand is shed due to missing capacity)"
+            Values:
+              LastSupplyPrice:
+                MetaData:
+                  description: "The market price is capped at the highest supply bid."
+              ValueOfLostLoad:
+                MetaData:
+                  description: "The energy price on a market with scarcity equals the maximum allowed price (scarcity price)."
+      GateClosureInfoOffsetInSeconds: &DAM_A_GateClosureInfoOffset
+        AttributeType: integer
+        List: false
+        Mandatory: true
+        MetaData:
+          description: "Time delay between sending out GateClosureInfo and actual market clearing."
+          unit: s
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+    Products:
+      Awards: &DAM_P_Awards
+        MetaData:
+          description: "Awarded energy and price per bidding trader."
+          isAbout: [{name: "award", "@id": "OEO_00140122"}]
+      GateClosureInfo: &DAM_P_GateClosureInfo
+        MetaData:
+          description: "Information on when the market clearing is performed."
+    Outputs:
+      TotalAwardedPowerInMW: &DAM_O_TotalAwardedPower
+        MetaData:
+          description: "The total amount of power in MW awarded."
+          unit: MW
+          isAbout: [{name: "award", "@id": "OEO_00140122"}]
+      ElectricityPriceInEURperMWH: &DAM_O_ElectricityPrice
+        MetaData:
+          description: "The electricity price in Euro per MWH."
+          unit: EUR/MWh
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}]
+      DispatchSystemCostInEUR: &DAM_O_DispatchSystemCost
+        MetaData:
+          description: "The dispatch cost in Euro."
+          unit: EUR
+          isAbout: [{name: "system cost", "@id": "OEO_00020116"}]
+    MetaData:
+      description: "This energy exchange represents the day-ahead energy market with one clearing per time segment (typically hourly clearing). It digests the requested and offered energy from connected Traders, finds a uniform market uniform clearing price, and returns the price and their specific awarded energy to the Traders."
+      subject: [{name: "energy market exchange", "@id": "OEO_00020065"}]
+      keywords: ["electricity", "market", "market zone"]
+
+  DayAheadMarketMultiZone:
+    Attributes:
+      Clearing: *DAM_G_Clearing
+      MarketZone: &DAM_A_MarketZone
+        AttributeType: string_set
+        Mandatory: false
+        List: false
+        help: "Identifier specifying the market zone this DayAheadMarket is representing"
+        MetaData:
+          description: "Identifier specifying the market zone of the DayAheadMarket"
+          isAbout: [{name: "bidding zone", "@id": "OEO_00360005"}]
+      Transmission: &DAM_G_Transmission
+        AttributeType: block
+        List: true
+        Mandatory: false
+        MetaData:
+          description: "Transmission capacities towards connected market zones"
+          isAbout: [{name: "power line", "@id": "OEO_00000253"}]
+        NestedAttributes:
+          MarketZone:
+            AttributeType: string_set
+            List: false
+            Mandatory: true
+            help: "Connected market zone that can be supplied with additional energy"
+            MetaData:
+              description: "Connected Market zone that can be supplied with additional energy"
+              isAbout: [{name: "bidding zone", "@id": "OEO_00360005"}]
+          CapacityInMW:
+            AttributeType: time_series
+            List: false
+            Mandatory: true
+            help: "Net transfer capacity of supply from own to connected market zone"
+            MetaData:
+              description: "Net transfer capacity of supply from own to connected market zone"
+              unit: MW
+              isAbout: [{name: "energy transfer", "@id": "OEO_00000253"}, {name: "maximum value", "@id": "OEO_00010256"}]
+      GateClosureInfoOffsetInSeconds: *DAM_A_GateClosureInfoOffset
+    Products:
+      TransmissionAndBids: &DAM_P_TransmissionAndBids
+        MetaData:
+          description: "Transmission capacities and bids from exchange in local market zone."
+      Awards: *DAM_P_Awards
+      GateClosureInfo: *DAM_P_GateClosureInfo
+    Outputs:
+      TotalAwardedPowerInMW: *DAM_O_TotalAwardedPower
+      ElectricityPriceInEURperMWH: *DAM_O_ElectricityPrice
+      DispatchSystemCostInEUR: *DAM_O_DispatchSystemCost
+      PreCouplingElectricityPriceInEURperMWH:
+        MetaData:
+          description: "Electricity price which would occur without any market coupling in EUR/MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}]
+      PreCouplingTotalAwardedPowerInMW:
+        MetaData:
+          description: "Awarded power without any market coupling in MW"
+          unit: MW
+          isAbout: [{name: "award", "@id": "OEO_00140122"}]
+      PreCouplingDispatchSystemCostInEUR:
+        MetaData:
+          description: "System cost without any market coupling in EUR"
+          unit: EUR
+          isAbout: [{name: "system cost", "@id": "OEO_00020116"}]
+      AwardedNetEnergyFromImportInMWH:
+        MetaData:
+          description: "Net awarded power from imports in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}]
+      AwardedNetEnergyToExportInMWH:
+        MetaData:
+          description: "Net awarded energy to export in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}]
+    MetaData:
+      description: "This energy exchange performs local market clearing for a single day-ahead energy market in a cluster of coupled market zones."
+      subject: [{name: "energy market exchange", "@id": "OEO_00020069"}]
+      keywords: ["electricity", "market", "market zone", "market coupling"]
+
+  MarketCoupling:
+    Attributes:
+      MinimumDemandOffsetInMWH:
+        AttributeType: double
+        Mandatory: false
+        List: false
+        help: "Offset added to the demand shift that ensures a price change at the involved markets."
+        MetaData:
+          description: "This offset is added to the demand shift to ensures a price change at the involved markets."
+          unit: MWh
+    Products:
+      MarketCouplingResult:
+        MetaData:
+          description: "Result of the coupled market clearing"
+    Outputs:
+      AvailableTransferCapacityInMWH:
+        MetaData:
+          description: "Complex output; the capacity available for transfer between two markets in MWH"
+          unit: MWh
+          isAbout: [{name: "electrical energy transfer", "@id": "OEO_00320036"}]
+      UsedTransferCapacityInMWH:
+        MetaData:
+          description: "Complex output; the actual used transfer capacity between two markets in MWH"
+          unit: MWh
+          isAbout: [{name: "electrical energy transfer", "@id": "OEO_00320036"}]
+    MetaData:
+      description: "Couples different markets. It receives merit orders from individual EnergyExchange(s). It computes coupled electricity prices aiming at minimising price differences between markets. Sends individual, coupled prices back to client EnergyExchanges."
+      subject: [{name: "market exchange", "@id": "OEO_00020069"}]
+      keywords: ["electricity", "market coupling"]
+
+  ImportTrader:
+    Attributes:
+      Imports:
+        AttributeType: block
+        List: true
+        Mandatory: true
+        MetaData:
+          description: "List of import timeseries with associated prices."
+        NestedAttributes:
+          AvailableEnergyForImport:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            help: "Amount of Energy from imports to be offered at energy exchange in MWh"
+            MetaData:
+              description: "Amount of Energy from imports to be offered at energy exchange in MWh"
+              unit: MWh
+              isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+          ImportCostInEURperMWH:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            help: "Costs at which imports are offered at energy exchange in EUR/MWh"
+            MetaData:
+              description: "Costs at which imports are offered at energy exchange"
+              unit: EUR/MWh
+              isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+    Products:
+      Bids: &DamTrader_P_Bids
+        MetaData:
+          description: "Sell or Buy orders to be placed at the associated DayAheadMarket"
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}]
+      BidsForecast: &Trader_P_BidsForecast
+        MetaData:
+          description: "A forecast of the own bids to be placed at later times at the associated DayAheadMarket"
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "forecast", "@id": "OEO_00010411"}]
+    Outputs:
+      OfferedEnergyInMWH: &DamTrader_O_OfferedEnergy
+        MetaData:
+          description: "Energy offered to energy exchange in MWh"
+          unit: MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedEnergyInMWH: &DamTrader_O_AwardedEnergy
+        MetaData:
+          description: "Energy awarded by energy exchange in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      RequestedEnergyInMWH: &DamTrader_O_RequestedEnergy
+        MetaData:
+          description: "Energy requested at energy exchange in MWh"
+          unit: MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "ImportTrader offers imported energy at the day-ahead-market according to given energy import as supply."
+      subject: [{name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "import", "trading"]
+
+  CarbonMarket:
+    Attributes:
+      Co2Prices:
+        AttributeType: time_series
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "The CO2 price. It is an exogenously defined price time series."
+          unit: EUR/t
+          isAbout: [{name: "CO2 price", "@id": "OEO_00010269"}]
+      OperationMode:
+        AttributeType: enum
+        Mandatory: true
+        List: false
+        Values:
+          FIXED:
+            MetaData:
+              description: "CO2 prices are read from file - actual emissions create no feedback on the CO2 price."
+          DYNAMIC:
+            MetaData:
+              description: "CO2 prices are determined based on the sum of CO2 emissions and a CO2 cap read from file."
+        MetaData:
+          description: "Mode of operation of CarbonMarket."
+    Products:
+      Co2PriceForecast:
+        MetaData:
+          description: "Co2 price forecast."
+          isAbout: [{name: "CO2 price", "@id": "OEO_00010269"}, {name: "forecast", "@id": "OEO_00010411"}]
+      Co2Price:
+        MetaData:
+          description: "Co2 price."
+          isAbout: [{name: "CO2 price", "@id": "OEO_00010269"}]
+      CertificateBill:
+        MetaData:
+          description: "Costs for ordered CO2-certificates."
+          isAbout: [{name: "cost", "@id": "OEO_00040009"}, {name: "CO2 emission", "@id": "OEO_00260007"}]
+    Outputs:
+      Co2EmissionsInTons:
+        MetaData:
+          description: "Registered CO2 emissions in tons"
+          unit: t
+          isAbout: [{name: "CO2 emission", "@id": "OEO_00260007"}]
+      Co2PriceInEURperTon:
+        MetaData:
+          description: "CO2 price in EUR per ton"
+          unit: EUR/t
+          isAbout: [{name: "CO2 emission certificate price", "@id": "OEO_00010271"}]
+    MetaData:
+      description: "The CarbonMarket sells CO2 emission allowances, determines their prices and accounts for total quantity of sold CO2 allowances."
+      subject: [{name: "emission market exchange", "@id": "OEO_00020075"}]
+      keywords: ["carbon dioxide", "market", "emission certificate"]
+
+  FuelsMarket:
+    Attributes:
+      FuelPrices:
+        AttributeType: block
+        List: true
+        Mandatory: true
+        MetaData:
+          description: "Price timeseries for different fuels"
+        NestedAttributes:
+          FuelType: &FuelsTrader_A_FuelType
+            AttributeType: string_set
+            List: false
+            Mandatory: true
+            MetaData:
+              description: "Type of fuel"
+              isAbout: [{name: "fuel", "@id": "OEO_00000173"}]
+          Price:
+            AttributeType: time_series
+            List: false
+            Mandatory: true
+            MetaData:
+              description: "Fuel price"
+              isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "monetary price", "@id": "OEO_00020427"}]
+          ConversionFactor:
+            AttributeType: double
+            List: false
+            Mandatory: true
+            MetaData:
+              description: "For the associated fuel price time series to €/Thermal_MWh (in case the fuel price is given in another unit). Example: if the fuel price is given in k€/Thermal_MWh, the conversion factor needs to be set to 1000."
+    Products:
+      FuelPriceForecast:
+        MetaData:
+          description: "Forecasted value of a fuel price"
+          isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "monetary price", "@id": "OEO_00020427"}, {name: "forecast", "@id": "OEO_00010411"}]
+      FuelPrice:
+        MetaData:
+          description: "Fuel price"
+          isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "monetary price", "@id": "OEO_00020427"}]
+      FuelBill:
+        MetaData:
+          description: "Sum of costs for purchased fuel"
+          isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "monetary value", "@id": "OEO_00040003"}]
+    Outputs: []
+    MetaData:
+      description: "FuelsMarket determines market prices for power plant fuels. These may be conventional fuels or others (e.g. Biogas). So far, FuelsMarket does not apply any market mechanisms to create fuel prices, but provides fuel price data from configured TimeSeries."
+      subject: [{name: "fuel market exchange", "@id": "OEO_00020060"}]
+      keywords: ["fuel", "market", "energy"]
+
+  SupportPolicy:
+    Attributes:
+      SetSupportData:
+        AttributeType: block
+        Mandatory: true
+        List: true
+        MetaData:
+          description: "Definitions for support instruments"
+          isAbout: [{name: "economic instrument", "@id": "OEO_00010456"}]
+        NestedAttributes:
+          PolicySet:
+            AttributeType: string_set
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Sets for energy-carrier-specific remuneration"
+              isAbout: [{name: "energy carrier", "@id": "OEO_00020039"}]
+          FIT:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            NestedAttributes:
+              TsFit:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "A feed-in-tariff (FIT) timeseries."
+                  unit: EUR/MWh
+                  isAbout: [{name: "feed-in tariff", "@id": "OEO_00020108"}]
+            MetaData:
+              description: "A feed-in-tariff (FIT)."
+              isAbout: [{name: "feed-in tariff", "@id": "OEO_00020108"}]
+          MPVAR:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            NestedAttributes:
+              Lcoe:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "A group for a TechnologySet holding the specific MPVAR information."
+                  unit: EUR/MWh
+                  isAbout: [{name: "levelised cost of electricity", "@id": "OEO_00020127"}]
+            MetaData:
+              description: "A variable market premium."
+              isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+          MPFIX:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            NestedAttributes:
+              Premium:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "A group for a TechnologySet holding the specific MPFIX information."
+                  unit: EUR/MWh
+                  isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+            MetaData:
+              description: "A fixed market premium."
+              isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+          CFD:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            NestedAttributes:
+              Lcoe:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "A TimeSeries with the Lcoe used as the value to be applied in a variable ex post market premium scheme."
+                  unit: EUR/MWh
+                  isAbout: [{name: "levelised cost of electricity", "@id": "OEO_00020127"}]
+            MetaData:
+              description: "A group for a TechnologySet holding the specific CFD information."
+              isAbout: [{name: "economic instrument", "@id": "OEO_00010456"}]
+          CP:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            NestedAttributes:
+              Premium:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  unit: EUR/MW
+                  description: "A TimeSeries with the capacity premium."
+                  isAbout: [{name: "capacity premium", "@id": "OEO_00020111"}]
+            MetaData:
+              description: "A group for a TechnologySet holding the specific information about a capacity premium."
+              isAbout: [{name: "capacity premium", "@id": "OEO_00020111"}]
+          FINANCIAL_CFD:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            Metadata:
+              isAbout: [{name: "economic instrument", "@id": "OEO_00010456"}]
+              description: "A group for a TechnologySet holding the specific information about a financial contract for difference."
+            NestedAttributes:
+              Premium:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                Metadata:
+                  description: "The capacity premium for the TechnologySet which (by assumption) equals to the share of the total full costs (investment and (expected) operational expenditures) for the accounting period."
+                  unit: EUR/MW
+                  isAbout: [{name: "capacity premium", "@id": "OEO_00020111"}]
+              ReferenceYieldProfile:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                help: "Yield profile of the reference plant to calculate payback obligation from its market revenues"
+                MetaData:
+                  description: "A referencfe yield profile to calculate payback obligation from its market revenues."
+                  unit: 1
+                  isAbout: [{name: "yield profile", "@id": "OEO_00140139"}]
+    Products:
+      SupportInfo:
+        MetaData:
+          description: "Info on the support scheme to be applied to a set of plants."
+      SupportPayout:
+        MetaData:
+          description: "Actual pay-out of the support."
+          isAbout: [{name: "monetary value", "@id": "OEO_00040003"}]
+      MarketValueCalculation:
+        MetaData:
+          description: "Trigger for market value calculation - not send to anyone."
+    Outputs:
+      MarketValueInEURperMWH:
+        MetaData:
+          description: "Market values per energy carrier and evaluation interval"
+          unit: EUR/MWh
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+    MetaData:
+      description: "SupportPolicy administers support payments for renewable generators. Payments are made to an AggregatorTrader who passes them to a RenewablePlantOperator. Current support policies are a feed-in tariff (FIT), a variable market premium (MPVAR), a fixed market premium (MPFIX), contracts for differences (CFD), and a capacity premium (CP)."
+      subject: [{name: "economic instrument", "@id": "OEO_00010456"}]
+      keywords: ["electricity", "policy instrument", "support", "monetary"]
+
+  HydrogenSupportPolicy:
+    Attributes:
+      SetSupportData:
+        AttributeType: block
+        Mandatory: true
+        List: true
+        MetaData:
+          description: "Definitions of support instruments"
+          isAbout: [{name: "economic instrument", "@id": "OEO_00010456"}]
+        NestedAttributes:
+          HydrogenPolicySet: &HydrogenSupportPolicy_A_HydrogenPolicySet
+            AttributeType: string_set
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The name of a set of clients the hydrogen support instruments are applicable for"
+          MPFIX:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Holds the specific information about the support instrument MPFIX"
+              isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+            NestedAttributes:
+              Premium:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Development over time of the premium rate in EUR per thermal MWH"
+                  isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+                  unit: EUR/MWh
+    Products:
+      SupportInfo:
+        MetaData:
+          description: "Info on the support scheme to be applied to a set of clients"
+      SupportPayout:
+        MetaData:
+          description: "Actual support pay-out for a client"
+          isAbout: [{name: "monetary value", "@id": "OEO_00040003"}]
+    MetaData:
+      description: "HydrogenSupportPolicy administers support payments for hydrogen. Payments are made to a HydrogenSupportClient. Current support policies are fixed market premium (MPFIX)."
+      subject: [{name: "economic instrument", "@id": "OEO_00010456"}]
+      keywords: ["hydrogen", "policy instrument", "support", "monetary"]
+
+  DemandTrader:
+    Attributes:
+      Loads:
+        AttributeType: block
+        List: true
+        Mandatory: true
+        NestedAttributes:
+          DemandSeries:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "A time series that contains demand values in each simulated time step."
+              unit: MWh
+              isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "electricity demand", "@id": "OEO_00320062"}]
+          ValueOfLostLoad:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The price at which the demand is offered, i.e. maximum willingness to pay for the assiciated energy."
+              unit: EUR/MWh
+              isAbout: [{name: "cost", "@id": "OEO_00040009"}]
+        MetaData:
+          description: "List demand timeseries and their associated value of lost load"
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+    MetaData:
+      description: "DemandTrader is a Trader, which is responsible for purchasing the electricity demand at the EnergyExchange."
+      subject: [{name: "demand trader", "@id": "OEO_00140140"}]
+      keywords: ["electricity", "demand", "trading"]
+
+  ConventionalTrader:
+    Attributes:
+      minMarkup:
+        AttributeType: double
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Is the lower bound of the interpolation for changes to the marginal costs (default=0)"
+          unit: EUR/MWh
+          isAbout: [{name: "markup", "@id": "OEO_00020076"}]
+      maxMarkup:
+        AttributeType: double
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Is the upper bound of the interpolation for changes to the marginal costs (default=0)"
+          unit: EUR/MWh
+          isAbout: [{name: "markup", "@id": "OEO_00020076"}]
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      Payout: &PowerPlantScheduler_P_Payout
+        MetaData:
+          description: "Pay out of the contracted plant or flexibility portfolio operator."
+          isAbout: [{name: "monetary value", "@id": "OEO_00040003"}]
+      DispatchAssignment: &PowerPlantScheduler_P_DispatchAssignment
+        MetaData:
+          description: "The dispatch assignment for the plant / flexibility portfolio operators."
+          isAbout: [{name: "dispatch assignment", "@id": "OEO_00140136"}]
+      GateClosureForward: &TraderWithClients_P_GateClosureForward
+        MetaData:
+          description: "Forwarded bidding times request from EnergyExchange."
+      ForecastRequestForward: &TraderWithClients_P_ForecastRequestForward
+        MetaData:
+          description: "Forwarded forecasting times request from MarketForecaster."
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+    MetaData:
+      description: "The ConventionalTrader is a Trader that sells energy from ConventionalPlantOperators at the EnergyExchange. Bids are calculated based on available capacities of its linked power plants, their MarginalCosts and possible mark-ups or mark-downs. Finally, the bids are forwarded to the exchange and the awarded bids get allocated to the associated power plants."
+      subject: [{name: "conventional trader", "@id": "OEO_00140131"}]
+      keywords: ["electricity", "thermal power plant", "trading", "supply"]
+
+  StorageTrader:
+    Attributes:
+      Refinancing: &AnnualCostCalculator_G_Refinancing
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Refinancing specifications"
+        NestedAttributes:
+          InvestmentExpensesInEURperMW:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Investment expenses"
+              unit: EUR/MW
+              isAbout: [{name: "investment cost", "@id": "OEO_00020167"}]
+          AnnuityFactor:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The annuity factor."
+              unit: 1
+              isAbout: [{name: "amortisation time", "@id": "OEO_00320073"}]
+          AnnualFixedCostsInEURperMW:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The annual fixed costs"
+              unit: EUR/MW
+              isAbout: [{name: "fixed cost", "@id": "OEO_00020168"}]
+      Device: &Device_G_Device
+        AttributeType: block
+        Mandatory: true
+        List: false
+        NestedAttributes:
+          EnergyToPowerRatio: &Device_A_EnergyToPowerRatio
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The duration that a storage device can operate while delivering its rated output."
+              unit: h
+              isAbout: [{name: "storage capacity", "@id": "OEO_00230000"}]
+          SelfDischargeRatePerHour: &Device_A_SelfDischargeRatePerHour
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Measure of the rate at which a battery is discharged per hour."
+          ChargingEfficiency: &Device_A_ChargingEfficiency
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The efficiency with which a storage device charges."
+              unit: 1
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+          DischargingEfficiency: &Device_A_DischargingEfficiency
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The efficiency with which a storage device discharges."
+              unit: 1
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+          InitialEnergyLevelInMWH: &Device_A_InitialEnergyLevelInMWH
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The initial level of charge"
+              unit: MWh
+              isAbout: [{name: "energy value", "@id": "OEO_00050019"}]
+          InstalledPowerInMW: &Device_A_InstalledPowerInMW
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "TimeSeries of total peak production capacity."
+              unit: MW
+              isAbout: [{name: "power capacity", "@id": "OEO_00010257"}]
+        MetaData:
+          description: "Technical details of the storage device to administrate."
+      Strategy:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        NestedAttributes:
+          StrategistType:
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              SINGLE_AGENT_MIN_SYSTEM_COST:
+                MetaData:
+                  description: "Uses the storage device in order to minimise the total system cost. Full information is used to consider marginal cost of the bids instead of the bidding price itself which maybe distorted with mark-ups and mark-downs."
+              DISPATCH_FILE:
+                MetaData:
+                  description: "Creates a DispatchSchedule following a given TimeSeries read from input file. It can provide forecasts regarding its behaviour."
+              SINGLE_AGENT_MAX_PROFIT:
+                MetaData:
+                  description: "Uses the storage device in order to maximise the agent's profit."
+              MULTI_AGENT_MEDIAN:
+                MetaData:
+                  description: "Creates dispatch schedules based on a price interval and price median. This can be used on multiple storage agents in the same simulation."
+              MAX_PROFIT_PRICE_TAKER:
+                MetaData:
+                  description: "Creates dispatch schedules aiming to optimize own profits without considering own price impact."
+            MetaData:
+              description: "Declares the Strategist to be used for Bid calculation. Possible types are DISPATCH_FILE, SINGLE_AGENT_MIN_SYSTEM_COST, SINGLE_AGENT_MAX_PROFIT and MULTI_AGENT_SIMPLE."
+          ForecastPeriodInHours: &Strategist_A_ForecastPeriod
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of hours to the future at which the forecast is available. Must be smaller or equal to that of the MarketForecaster."
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}, {name: "forecast", "@id": "OEO_00010411"}]
+          ScheduleDurationInHours: &Strategist_A_ScheduleDuration
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of hours each created schedule is viable - should at least match (better: significantly larger than) E2P ratio of the Device."
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          BidToleranceInEURperMWH: &Strategist_A_BidTolerance
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Tolerance value added or subtracted from each calculated bid"
+              unit: EUR/MWh
+          ForecastUpdateType: &Strategist_A_ForecastUpdateType
+            AttributeType: enum
+            Mandatory: false
+            List: false
+            Values:
+              ALL:
+                MetaData:
+                  description: "Forecasts are requested for all time steps, discarding previously received electricity price forecasts."
+              INCREMENTAL:
+                MetaData:
+                  description: "Forecasts are only requested for missing time steps, therefore updated incrementally."
+            MetaData:
+              description: "Defines the mode of requesting electricity price forecasts (default='INCREMENTAL')"
+          SingleAgent:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Input parameters for single-agent strategies"
+            NestedAttributes:
+              ModelledChargingSteps:
+                AttributeType: integer
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Number of charging steps (per E2P) that is used to discretize the storage's state of charge (SOC)."
+                  unit: 1
+          MultiAgent:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Input parameters for multi-agent strategies"
+            NestedAttributes:
+              AssessmentFunctionPrefactors:
+                AttributeType: double
+                Mandatory: false
+                List: true
+                help: "Prefactors `a`,`b`,`c`, ... of a polynomial `a + bx + cx² + ...`, where `x` is the difference between the hourly price and the price median. Higher prefactors favour (dis-)charge at more extreme prices."
+                MetaData:
+                  description: "Prefactors `a`,`b`,`c`, ... of a polynomial `a + bx + cx² + ...`, where `x` is the difference between the hourly price and the price median. Higher prefactors favour (dis-)charge at more extreme prices."
+                  unit: 1
+          FixedDispatch:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Input parameters for fixed-dispatch strategy"
+            NestedAttributes:
+              Schedule:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                help: "Change of internal storage energy relative to available charging power. Values should be -1 <= x <= 1."
+                MetaData:
+                  description: ""
+                  unit: 1
+                  isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "net capacity factor", "@id": "OEO_00240016"}]
+              DispatchToleranceInMWH:
+                AttributeType: double
+                Mandatory: false
+                List: false
+                help: "Accepted tolerance for dispatch deviations in MWh."
+                MetaData:
+                  description: "Accepted tolerance for dispatch deviations in MWh."
+                  unit: MWh
+        MetaData:
+          description: "Group of parameters to describe the dispatch strategy for the storage device."
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      MeritOrderForecastRequest: &ForecastClient_P_MeritOrderForecastRequest
+        MetaData:
+          description: "Requests for merit-order forecasts"
+      PriceForecastRequest: &ForecastClient_P_PriceForecastRequest
+        MetaData:
+          description: "Requests for price-forecasts"
+      AnnualCostReport: &FlexibilityTrader_P_AnnualCostReport
+        MetaData:
+          description: "Report annual costs (not sent to other agents, but calculated within an agent)"
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      FixedCostsInEUR: &FlexibilityTrader_O_FixedCosts
+        MetaData:
+          description: "Fixed operation and maintenance costs in EUR"
+          unit: EUR
+          isAbout: [{name: "fixed cost", "@id": "OEO_00020168"}]
+      InvestmentAnnuityInEUR: &FlexibilityTrader_O_InvestmentAnnuity
+        MetaData:
+          description: "Investment annuity in EUR"
+          unit: EUR
+          isAbout: [{name: "", "@id": ""}]
+      VariableCostsInEUR: &FlexibilityTrader_O_VariableCosts
+        MetaData:
+          description: "Variable operation and maintenance costs in EUR"
+          unit: EUR
+          isAbout: [{name: "variable production cost", "@id": "OEO_00020146"}]
+      ReceivedMoneyInEUR: &FlexibilityTrader_O_ReceivedMoney
+        MetaData:
+          description: "Total received money in EUR"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      OfferedChargePriceInEURperMWH:
+        MetaData:
+          description: "Offered price for charging in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      OfferedDischargePriceInEURperMWH:
+        MetaData:
+          description: "Offered price for discharging in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      AwardedChargeEnergyInMWH:
+        MetaData:
+          description: "Total amount of charge energy awarded in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedDischargeEnergyInMWH:
+        MetaData:
+          description: "Total amount of discharge energy awarded in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      StoredEnergyInMWH:
+        MetaData:
+          description: "Amount of energy in storage in MWh after executing (dis-)charging actions in the current time step"
+          unit: MWh
+          isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "The StorageTrader uses a storage device to trade electricity at the energy exchange. Different dispatch strategies can be used to fulfil different targets, e.g. to maximise profits or to minimise system cost. Depending on its strategy, the StorageTrader might require (or contribute to) forecasts for price or merit order."
+      subject: [{name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "storage", "trading"]
+
+  RenewableTrader:
+    Attributes:
+      ShareOfRevenues:
+        AttributeType: double
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "The share of the market revenues the Trader may keep, must be between 0 and 1."
+          unit: 1
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}, {name: "fraction value", "@id": "OEO_00140127"}]
+      ForecastError: &AggregatorTrader_G_ForecastError
+        AttributeType: block
+        List: false
+        Mandatory: false
+        MetaData:
+          description: "Group of parameters to specify potential forecast errors."
+          isAbout: [{name: "forecast error", "@id": "OEO_00010233"}]
+        NestedAttributes:
+          Mean:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            help: "Relative offset of the power forecasts"
+            MetaData:
+              description: "The normalised mean value of a normally distributed error (positive value means an overestimation of feed-in potentials)."
+              unit: 1
+              isAbout: [{name: "arithmetic mean", "@id": "OEO_00140071"}]
+          StandardDeviation:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            help: "Standard deviation of the relative power forecasting errors"
+            MetaData:
+              description: "Standard deviation of the relative power forecasting errors."
+      MarketValueForecastMethod:
+        AttributeType: enum
+        List: false
+        Mandatory: false
+        MetaData:
+          description: "Choose upon the method to forecast the market value of associated energy carriers."
+        Values:
+          PREVIOUS_MONTH:
+            MetaData:
+              description: "Forecast from previous month."
+          FROM_FILE:
+            MetaData:
+              description: "Forecast from file."
+      MarketValueForecasts:
+        AttributeType: block
+        List: true
+        Mandatory: false
+        MetaData:
+          description: "Group holding market value forecasts for one or multiple energy carriers."
+        NestedAttributes:
+          EnergyCarrier: &RenewableTrader_A_EnergyCarrier
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Energy carrier as used in the context of energy policy (not necessarily a physical energy carrier)."
+              isAbout: [{name: "energy carrier", "@id": "OEO_00020039"}]
+            Values: &SupportPolicy_V_EnergyCarrier
+              PV:
+                MetaData:
+                  description: "PV"
+              WindOn:
+                MetaData:
+                  description: "Wind onshore"
+              WindOff:
+                MetaData:
+                  description: "Wind offshore"
+              RunOfRiver:
+                MetaData:
+                  description: "Run of river"
+              Biogas:
+                MetaData:
+                  description: "Biogas"
+              Other:
+                MetaData:
+                  description: "Other"
+          Forecast:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Forecast timeseries of market value for an associated energy carrier"
+              unit: EUR/MWh
+              isAbout: [{name: "forecast", "@id": "OEO_00010411"}, {name: "time series", "@id": "OEO_00030034"}, {name: "monetary value", "@id": "OEO_00040003"}]
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      Payout: *PowerPlantScheduler_P_Payout
+      DispatchAssignment: *PowerPlantScheduler_P_DispatchAssignment
+      GateClosureForward: *TraderWithClients_P_GateClosureForward
+      ForecastRequestForward: *TraderWithClients_P_ForecastRequestForward
+      SupportInfoRequest: &AggregatorTrader_P_SupportInfoRequest
+        MetaData:
+          description: "Request for support information for contracted technology set(s)"
+      SupportPayoutRequest: &AggregatorTrader_P_SupportPayoutRequest
+        MetaData:
+          description: "Request to obtain support payments for contracted technology set(s)"
+      YieldPotential: &AggregatorTrader_P_YieldPotential
+        MetaData:
+          description: "Yield potential of contracted technology set(s)"
+          isAbout: [{name: "yield profile", "@id": "OEO_00140139"}]
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      ReceivedSupportInEUR: &AggregatorTrader_O_ReceivedSupport
+        MetaData:
+          description: "Overall received support payments from policy agent"
+          unit: EUR
+          isAbout: [{name: "remuneration", "@id": "OEO_00020125"}]
+      RefundedSupportInEUR: &AggregatorTrader_O_RefundedSupport
+        MetaData:
+          description: "Overall support refunded to policy agent (in CFD scheme)"
+          unit: EUR
+          isAbout: [{name: "remuneration", "@id": "OEO_00020125"}, {name: "due", "@id": "OEO_00020124"}]
+      ReceivedMarketRevenues: &AggregatorTrader_O_ReceivedMarketRevenues
+        MetaData:
+          description: "Overall received market revenues from marketing power plants"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      TrueGenerationPotentialInMWH: &AggregatorTrader_O_TrueGenerationPotential
+        MetaData:
+          description: "Actual electricity generation potential"
+          unit: MWh
+          isAbout: [{name: "yield profile", "@id": "OEO_00140139"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "The RenewableTrader is an AggregatorTrader which markets plants eligible for support other than FIT. It trades energy of associated power plants at the EnergyExchange. It is kind of a direct marketer which markets generation that is either under a market premium scheme (MPVAR, MPFIX), a capacity premium scheme (CP) a contracts for differences scheme (CFD)."
+      subject: [{name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "renewable power plant", "trading", "supply", "support instrument"]
+
+  NoSupportTrader:
+    Attributes:
+      ShareOfRevenues:
+        AttributeType: double
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "The share of the market revenues the Trader may keep, must be between 0 and 1."
+          unit: 1
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}, {name: "fraction value", "@id": "OEO_00140127"}]
+      ForecastError: *AggregatorTrader_G_ForecastError
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      Payout: *PowerPlantScheduler_P_Payout
+      DispatchAssignment: *PowerPlantScheduler_P_DispatchAssignment
+      GateClosureForward: *TraderWithClients_P_GateClosureForward
+      ForecastRequestForward: *TraderWithClients_P_ForecastRequestForward
+      SupportInfoRequest: *AggregatorTrader_P_SupportInfoRequest
+      SupportPayoutRequest: *AggregatorTrader_P_SupportPayoutRequest
+      YieldPotential: *AggregatorTrader_P_YieldPotential
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      ReceivedSupportInEUR: *AggregatorTrader_O_ReceivedSupport
+      RefundedSupportInEUR: *AggregatorTrader_O_RefundedSupport
+      ReceivedMarketRevenues: *AggregatorTrader_O_ReceivedMarketRevenues
+      TrueGenerationPotentialInMWH: *AggregatorTrader_O_TrueGenerationPotential
+    MetaData:
+      description: "The NoSupportTrader is an AggregatorTrader to market renewable generation that doesn't receive any support payments. It trades energy of associated power plants at the EnergyExchange."
+      subject: [{name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "renewable power plant", "trading", "supply"]
+
+  SystemOperatorTrader:
+    Attributes:
+      ForecastError: *AggregatorTrader_G_ForecastError
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      Payout: *PowerPlantScheduler_P_Payout
+      DispatchAssignment: *PowerPlantScheduler_P_DispatchAssignment
+      GateClosureForward: *TraderWithClients_P_GateClosureForward
+      ForecastRequestForward: *TraderWithClients_P_ForecastRequestForward
+      SupportInfoRequest: *AggregatorTrader_P_SupportInfoRequest
+      SupportPayoutRequest: *AggregatorTrader_P_SupportPayoutRequest
+      YieldPotential: *AggregatorTrader_P_YieldPotential
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      ReceivedSupportInEUR: *AggregatorTrader_O_ReceivedSupport
+      RefundedSupportInEUR: *AggregatorTrader_O_RefundedSupport
+      ReceivedMarketRevenues: *AggregatorTrader_O_ReceivedMarketRevenues
+      TrueGenerationPotentialInMWH: *AggregatorTrader_O_TrueGenerationPotential
+    MetaData:
+      description: "The SystemOperatorTrader is an AggregatorTrader who trades renewable energy eligible for a FIT support scheme. It trades energy of associated power plants at the EnergyExchange."
+      subject: [{name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "renewable power plant", "trading", "supply", "feed-in tariff"]
+
+  MarketForecaster:
+    Attributes:
+      Clearing: *DAM_G_Clearing
+      ForecastPeriodInHours: &MarketForecaster_A_ForecastPeriod
+        AttributeType: integer
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "The number of hours for which a forecast is produced."
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}, {name: "forecast", "@id": "OEO_00010411"}]
+    Products:
+      ForecastRequest: &MarketForecaster_P_ForecastRequest
+        MetaData:
+          description: "A request for a (perfect foresight) bid prognosis."
+      MeritOrderForecast: &DamForecastProvider_P_MeritOrderForecast
+        MetaData:
+          description: "Perfect foresight merit-order forecast for a specific market clearing event"
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}]
+      PriceForecast: &DamForecastProvider_P_PriceForecast
+        MetaData:
+          description: "Perfect foresight price electricity forecast for a specific market clearing event"
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}, {name: "electricity price", "@id": "OEO_00020117"}]
+    Outputs:
+      AwardedEnergyForecastInMWH: &MarketForecaster_O_AwardedEnergyForecast
+        MetaData:
+          description: "Forecasted total awarded energy in MWh"
+          unit: MWh
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}, {name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      ElectricityPriceForecastInEURperMWH: &MarketForecaster_O_ElectricityPriceForecast
+        MetaData:
+          description: "Forecasted electricity price in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}, {name: "electricity price", "@id": "OEO_00020117"}]
+    MetaData:
+      description: "Provides perfect foresight forecasts for the day-ahead market to other agents. To have meaningful forecasts, all agents need to actually bid at Exchange with their intended bids given earlier to the Forecaster."
+      subject: [{name: "forecast", "@id": "OEO_00010411"}, {name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "market", "forecast"]
+
+  MeritOrderForecaster:
+    Attributes:
+      Clearing: *DAM_G_Clearing
+      ForecastPeriodInHours: *MarketForecaster_A_ForecastPeriod
+    Products:
+      ForecastRequest: *MarketForecaster_P_ForecastRequest
+      MeritOrderForecast: *DamForecastProvider_P_MeritOrderForecast
+    Outputs:
+      AwardedEnergyForecastInMWH: *MarketForecaster_O_AwardedEnergyForecast
+      ElectricityPriceForecastInEURperMWH: *MarketForecaster_O_ElectricityPriceForecast
+    MetaData:
+      description: "Deprecated - use MarketForecaster instead. A subtype type of MarketForecaster. Provides perfect foresight day-ahead merit-order forecasts to other agents."
+      subject: [{name: "forecast", "@id": "OEO_00010411"}, {name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "market", "forecast"]
+
+  PriceForecaster:
+    Attributes:
+      Clearing: *DAM_G_Clearing
+      ForecastPeriodInHours: *MarketForecaster_A_ForecastPeriod
+    Products:
+      ForecastRequest: *MarketForecaster_P_ForecastRequest
+      PriceForecast: *DamForecastProvider_P_PriceForecast
+    Outputs:
+      AwardedEnergyForecastInMWH: *MarketForecaster_O_AwardedEnergyForecast
+      ElectricityPriceForecastInEURperMWH: *MarketForecaster_O_ElectricityPriceForecast
+    MetaData:
+      description: "Deprecated - use MarketForecaster instead. A subtype of MarketForecaster. Provides perfect foresight day-ahead price forecasts to other agents."
+      subject: [{name: "forecast", "@id": "OEO_00010411"}, {name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "market", "forecast", "price"]
+
+  PriceForecasterFile:
+    Attributes:
+      PriceForecastsInEURperMWH:
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        help: "Time series of price forecasts"
+        MetaData:
+          description: "A predetermined price forecast timeseries"
+          unit: EUR/MWh
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}, {name: "forecast", "@id": "OEO_00010411"}, {name: "time series", "@id": "OEO_00030034"}]
+    Products:
+      PriceForecast:
+        MetaData:
+          description: "Price forecasts based on an external simulation input"
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}, {name: "forecast", "@id": "OEO_00010411"}]
+    MetaData:
+      description: "A type of Forecaster for the day-ahead electricity market. It provides electricity price forecasts to connected agents. These price forecasts are predetermined before the simulation begins, therefore exogenously defined, making them static in nature."
+      subject: [{name: "forecast", "@id": "OEO_00010411"}, {name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "market", "forecast", "price"]
+
+  PriceForecasterApi:
+    Attributes:
+      Clearing: *DAM_G_Clearing
+      ForecastPeriodInHours: *MarketForecaster_A_ForecastPeriod
+      ServiceURL:
+        AttributeType: string
+        Mandatory: true
+        List: false
+        help: "URL to amiris-priceforecast api"
+        MetaData:
+          description: "URL connection to an external API providing forecasts"
+          isAbout: [{name: "identifier", "@id": "http://purl.org/dc/elements/1.1/identifier"}]
+      LookBackWindowInHours:
+        AttributeType: integer
+        Mandatory: false
+        List: false
+        help: "Number of TimeSteps for look back; is set to ForecastPeriodInHours if not provided."
+        MetaData:
+          description: "Number of TimeSteps the external forecasting model can look back into the past in order to create the forecasts"
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      ForecastWindowExtensionInHours:
+        AttributeType: integer
+        Mandatory: false
+        List: false
+        help: "Number of TimeSteps additional to forecast horizon to be requested from API; (default=0)"
+        MetaData:
+          description: "Additional number of TimeSteps that are to be forecasted, in order to reduce calls of the external API model"
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      ForecastErrorToleranceInEURperMWH:
+        AttributeType: double
+        Mandatory: false
+        List: false
+        help: "Max accepted deviation between forecasted and realized electricity prices; if violated price forecasts are updated; if negative, no checks are performed; (default=-1)"
+        MetaData:
+          description: "Tolerance for deviation between forecasted and realized electricity prices; small tolerances may result in more API calls."
+          unit: EUR/MWh
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}]
+      ResidualLoadInMWh:
+        AttributeType: time_series
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Specific load time series derived from total electricity demand minus all renewable energy supply"
+          unit: MWh
+          isAbout: [{name: "demand", "@id": "OEO_00140040"}]
+    Products:
+      PriceForecast:
+        MetaData:
+          description: "Price forecasts based on an external model"
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}, {name: "forecast", "@id": "OEO_00010411"}]
+      SensitivityForecast:
+        MetaData:
+          description: "Forecast of a market clearing sensitivity; only sensitivities from a static price and a multiplier of 1 are available."
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}]
+    Outputs:
+      ElectricityPriceForecastInEURperMWH: *MarketForecaster_O_ElectricityPriceForecast
+      ElectricityPriceForecastVarianceInEURperMWH:
+        MetaData:
+          description: "Variance of forecasted electricity price in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "forecast error", "@id": "OEO_00010233"}, {name: "electricity price", "@id": "OEO_00020117"}]
+    MetaData:
+      description: "A type of Forecaster for the day-ahead electricity market; it provides electricity price forecasts to connected agents. These price forecasts are calculated by an external forecasting model using URLModelSerive."
+      subject: [{name: "forecast", "@id": "OEO_00010411"}, {name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "market", "forecast", "price"]
+
+  SensitivityForecaster:
+    Attributes:
+      ForecastPeriodInHours: *MarketForecaster_A_ForecastPeriod
+      Clearing: *DAM_G_Clearing
+      MultiplierEstimation:
+        MetaData:
+          description: "Parameters used for the estimation of dispatch multipliers of sensitivity forecast clients"
+        AttributeType: block
+        Mandatory: false
+        List: false
+        NestedAttributes:
+          IgnoreAwardFactor:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Awards with less energy than maximum energy divided by this factor are ignored."
+              unit: MWh
+              isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}, {name: "award", "@id": "OEO_00140122"}]
+          InitialEstimateWeight:
+            AttributeType: integer
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Weight of the initial estimate."
+              unit: 1
+          DecayInterval:
+            AttributeType: integer
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Interval steps after which a factor weight has reduced to exp(-1)."
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+    Products:
+      SensitivityForecast: &SensitivityForecastProvider_P_SensitivityForecast
+        MetaData:
+          description: "Forecast of a market clearing sensitivity; type of sensitivity depends on the registered needs of the client"
+      ForecastRequest: *MarketForecaster_P_ForecastRequest
+      MeritOrderForecast: *DamForecastProvider_P_MeritOrderForecast
+      PriceForecast: *DamForecastProvider_P_PriceForecast
+    Outputs:
+      AwardedEnergyForecastInMWH: *MarketForecaster_O_AwardedEnergyForecast
+      ElectricityPriceForecastInEURperMWH: *MarketForecaster_O_ElectricityPriceForecast
+    MetaData:
+      description: "Forecaster that provides forcasts for sensitivies of the kind demanded by its clients."
+      subject: [{name: "forecast", "@id": "OEO_00010411"}, {name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "market", "forecast"]
+
+  ConventionalPlantOperator:
+    Attributes:
+      Refinancing: &PPO_G_Refinancing
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Refinancing specifications"
+        NestedAttributes:
+          InvestmentExpensesInEURperMW:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Investment expenses"
+              unit: EUR/MW
+              isAbout: [{name: "investment cost", "@id": "OEO_00020167"}]
+          AnnuityFactor:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The annuity factor"
+              unit: 1
+              isAbout: [{name: "amortisation time", "@id": "OEO_00320073"}]
+          AnnualFixedCostsInEURperMW:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The annual fixed costs"
+              unit: EUR/MW
+              isAbout: [{name: "fixed cost", "@id": "OEO_00020168"}]
+    Products:
+      MarginalCost: &PPO_P_MarginalCost
+        MetaData:
+          description: "The marginal cost(s) of the power plant(s)"
+          isAbout: [{name: "marginal cost", "@id": "OEO_00040008"}]
+      MarginalCostForecast: &PPO_P_MarginalCostForecast
+        MetaData:
+          description: "A forecast for the marginal cost(s) of the power plant(s)"
+          isAbout: [{name: "marginal cost", "@id": "OEO_00040008"}, {name: "forecast", "@id": "OEO_00010411"}]
+      AnnualCostReport: &PPO_P_AnnualCostReport
+        MetaData:
+          description: "The annual cost report"
+      FuelPriceForecastRequest: &FuelsTrader_P_FuelPriceForecastRequest
+        MetaData:
+          description: "Request for a price forecast at a given time and for a given fuel."
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}, {name: "fuel", "@id": "OEO_00000173"}, {name: "monetary price", "@id": "OEO_00020427"}]
+      FuelPriceRequest: &FuelsTrader_P_FuelPriceRequest
+        MetaData:
+          description: "Request for fuel price at a given time and for a given fuel."
+          isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "monetary price", "@id": "OEO_00020427"}]
+      FuelBid: &FuelsTrader_P_FuelBid
+        MetaData:
+          description: "Bid for a specific fuel."
+          isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "bid", "@id": "OEO_00140121"}]
+      Co2Emissions:
+        MetaData:
+          description: "Total actual emissions produced during power generation."
+          isAbout: [{name: "CO2 emission", "@id": "OEO_00260007"}]
+      Co2PriceForecastRequest:
+        MetaData:
+          description: "Request for a CO2 price forecast at a given time"
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}, {name: "CO2 emission", "@id": "OEO_00260007"}, {name: "monetary price", "@id": "OEO_00020427"}]
+      Co2PriceRequest:
+        MetaData:
+          description: "Request for a CO2 price at a given time"
+          isAbout: [{name: "CO2 emission", "@id": "OEO_00260007"}, {name: "monetary price", "@id": "OEO_00020427"}]
+    Outputs:
+      AwardedEnergyInMWH: &PPO_O_AwardedEnergy
+        MetaData:
+          description: "Electricity awarded for production"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "energy value", "@id": "OEO_00050019"}]
+      OfferedEnergyInMWH: &PPO_O_OfferedEnergy
+        MetaData:
+          description: "Electricity offered for production"
+          unit: MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "energy value", "@id": "OEO_00050019"}]
+      ReceivedMoneyInEUR: &PPO_O_ReceivedMoney
+        MetaData:
+          description: "Money received"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      VariableCostsInEUR: &PPO_O_VariableCosts
+        MetaData:
+          description: "Variable operation and maintenance costs"
+          unit: EUR
+          isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+      FixedCostsInEUR: &PPO_O_FixedCosts
+        MetaData:
+          description: "Fixed operation and maintenance costs"
+          unit: EUR
+          isAbout: [{name: "fixed cost", "@id": "OEO_00020168"}]
+      InvestmentAnnuityInEUR: &PPO_O_InvestmentAnnuity
+        MetaData:
+          description: "Annual share of investment cost"
+          unit: EUR
+          isAbout: [{name: "investment cost", "@id": "OEO_00020167"}]
+      DispatchedEnergyInMWHperPlant:
+        MetaData:
+          description: "Energy production in MWh per time interval and power plant"
+          unit: MWh
+          isAbout: [{name: "electricity generation process", "@id": "OEO_00240014"}, {name: "energy value", "@id": "OEO_00050019"}]
+      VariableCostsInEURperPlant:
+        MetaData:
+          description: "Variable operation costs in EUR per time interval and power plant"
+          unit: EUR
+          isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+      ReceivedMoneyInEURperPlant:
+        MetaData:
+          description: "Money assigned to each power plant in EUR per time interval"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      Co2EmissionsInT:
+        MetaData:
+          description: "Total CO2 emissions for all power plants per time interval"
+          unit: t
+          isAbout: [{name: "CO2 emission", "@id": "OEO_00260007"}]
+      FuelConsumptionInThermalMWH:
+        MetaData:
+          description: "Total fuel consumption for all power plants per time interval"
+          unit: MWh
+          isAbout: [{name: "fuel", "@id": "OEO_00000173"}, {name: "energy use", "@id": "OEO_00010210"}]
+    MetaData:
+      description: "The ConventionalPlantOperator is a type of PowerPlantOperator. It holds a Portfolio of conventional power plants and sends MarginalCosts (and their forecasts) to an associated ConventionalTrader."
+      subject: [{name: "power plant operator", "@id": "OEO_00140130"}]
+      keywords: ["electricity", "power plant", "generation", "thermal"]
+
+  VariableRenewableOperator:
+    Attributes:
+      PolicySet: &RPO_A_Set
+        AttributeType: string_set
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Sets for energy-carrier-specific remuneration"
+          isAbout: [{name: "remuneration", "@id": "OEO_00020125"}]
+      EnergyCarrier: &RPO_A_EnergyCarrier
+        AttributeType: enum
+        Mandatory: true
+        List: false
+        Values: *SupportPolicy_V_EnergyCarrier
+        MetaData:
+          description: "EnergyCarrier used by this plant operator to produce electricity."
+          isAbout: [{name: "energy carrier", "@id": "OEO_00020039"}]
+      SupportInstrument: &RPO_A_SupportInstrument
+        AttributeType: enum
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Specifies support instrument to be used."
+          isAbout: [{name: "remuneration", "@id": "OEO_00020125"}]
+        Values: &PolicyItem_V_SupportInstrument
+          FIT:
+            MetaData:
+              description: "A feed-in-tariff (FIT)"
+              isAbout: [{name: "feed-in tariff", "@id": "OEO_00020108"}]
+          MPVAR:
+            MetaData:
+              description: "A variable market premium (MPVAR); as in the German Renewable Energies Act"
+              isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+          MPFIX:
+            MetaData:
+              description: "A fixed market premium (MPFIX)"
+              isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+          CFD:
+            MetaData:
+              description: "A contracts for differences (CFD) scheme, building on MPVAR"
+              isAbout: [{name: "economic instrument", "@id": "OEO_00010456"}]
+          CP:
+            MetaData:
+              description: "A capacity premium (CP) scheme"
+              isAbout: [{name: "capacity premium", "@id": "OEO_00020111"}]
+          FINANCIAL_CFD:
+            MetaData:
+              description: "A financial contract for differences (FINANCIAL_CFD) scheme"
+              isAbout: [{name: "economic instrument", "@id": "OEO_00010456"}]
+      InstalledPowerInMW: &RPO_A_InstalledPower
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "TimeSeries of total peak production capacity."
+          unit: MW
+          isAbout: [{name: "power capacity", "@id": "OEO_00010257"}]
+      OpexVarInEURperMWH: &RPO_A_OpexVar
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "TimeSeries of variable cost of operation."
+          unit: EUR/MWh
+          isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "variable cost", "@id": "OEO_00020145"}]
+      YieldProfile: &VRPO_A_YieldProfile
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "TimeSeries of actual power production; values are relative, where 0 represents no production possibility and 1 resembles possibility to deliver peak power (i.e. all the currently installed power)."
+          unit: 1
+          isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "yield profile", "@id": "OEO_00140139"}]
+    Products:
+      MarginalCost: *PPO_P_MarginalCost
+      MarginalCostForecast: *PPO_P_MarginalCostForecast
+      AnnualCostReport: *PPO_P_AnnualCostReport
+      SetRegistration: &RPO_P_SetRegistration
+        MetaData:
+          description: "A registration message to the marketing agent"
+    Ouputs:
+      AwardedEnergyInMWH: *PPO_O_AwardedEnergy
+      OfferedEnergyInMWH: *PPO_O_OfferedEnergy
+      ReceivedMoneyInEUR: *PPO_O_ReceivedMoney
+      VariableCostsInEUR: *PPO_O_VariableCosts
+      FixedCostsInEUR: *PPO_O_FixedCosts
+      InvestmentAnnuityInEUR: *PPO_O_InvestmentAnnuity
+    MetaData:
+      description: "The VariableRenewableOperator is a RenewablePlantOperator for renewable plants with a variable yield profile."
+      subject: [{name: "power plant operator", "@id": "OEO_00140130"}]
+      keywords: ["electricity", "power plant", "generation", "renewable"]
+
+  VariableRenewableOperatorPpa:
+    Attributes:
+      PolicySet: *RPO_A_Set
+      EnergyCarrier: *RPO_A_EnergyCarrier
+      SupportInstrument: *RPO_A_SupportInstrument
+      InstalledPowerInMW: *RPO_A_InstalledPower
+      OpexVarInEURperMWH: *RPO_A_OpexVar
+      YieldProfile: *VRPO_A_YieldProfile
+      PpaPriceInEURperMWH: &VRPOP_A_PpaPrice
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Price for selling power via a bilateral Power Purchase Agreement"
+          unit: EUR/MWh
+          isAbout: [{name: "electricity price", "@id": "OEO_00020117"}]
+      Refinancing: *PPO_G_Refinancing
+    Products:
+      MarginalCost: *PPO_P_MarginalCost
+      MarginalCostForecast: *PPO_P_MarginalCostForecast
+      AnnualCostReport: *PPO_P_AnnualCostReport
+      SetRegistration: *RPO_P_SetRegistration
+      PpaInformation: &VRPOP_P_PpaInformation
+        MetaData:
+          description: "Details about a Power Purchase Agreement (PPA) with this plant operator"
+      PpaInformationForecast: &VRPOP_P_PpaInformationForecast
+        MetaData:
+          description: "Details about a Power Purchase Agreement (PPA) with this plant operator for the future"
+          isAbout: [{name: "forecast", "@id": "OEO_00010411"}]
+      PotentialLogging: &VRPOP_P_Ppa_PotentialLogging
+        MetaData:
+          description: "Trigger for logging own power plant production potential."
+    Ouputs:
+      AwardedEnergyInMWH: *PPO_O_AwardedEnergy
+      OfferedEnergyInMWH: *PPO_O_OfferedEnergy
+      ReceivedMoneyInEUR: *PPO_O_ReceivedMoney
+      VariableCostsInEUR: *PPO_O_VariableCosts
+      FixedCostsInEUR: *PPO_O_FixedCosts
+      InvestmentAnnuityInEUR: *PPO_O_InvestmentAnnuity
+    MetaData:
+      description: "The VariablePpaContractee is a power plant operating on variable renewable energy sources, fulfilling a single private purchase agreement (PPA) to market its energy"
+      subject: [{name: "power plant operator", "@id": "OEO_00140130"}]
+      keywords: ["electricity", "power plant", "generation", "renewable", "variable"]
+
+  Biogas:
+    Attributes:
+      PolicySet: *RPO_A_Set
+      EnergyCarrier: *RPO_A_EnergyCarrier
+      InstalledPowerInMW: *RPO_A_InstalledPower
+      OpexVarInEURperMWH: *RPO_A_OpexVar
+      SupportInstrument: *RPO_A_SupportInstrument
+      FullLoadHoursPerYear:
+        AttributeType: double
+        List: false
+        Mandatory: false
+        MetaData:
+          description: "Determines scaling factor (by dividing with 8760) applied to output power for all strategies except FROM_FILE."
+          unit: h/a
+          isAbout: [{name: "full load hours", "@id": "OEO_00140144"}]
+      OperationMode:
+        AttributeType: enum
+        List: false
+        Mandatory: true
+        Values:
+          CONTINUOUS:
+            MetaData:
+              description: "Biogas offers (the more or less) constant base power output to its associated Trader, e.g. SystemOperatorTrader."
+          DAY_NIGHT:
+            MetaData:
+              description: "The Agent offers 50% of its base power output at night (from 19h to 6h) and 150% at daylight (from 7h to 18h)."
+          FROM_FILE:
+            MetaData:
+              description: "Biogas offers power according to the specified DispatchTimeSeries. This TimeSeries needs to contain values between 0 and 1 reflecting the power output relative to the installed power. Here, the FullLoadHoursPerYear are not applied as a scaling factor."
+        MetaData:
+          description: "There are 3 OperationModes available for the Biogas agent. Common to most modes is the base power output according to the currently InstalledPowerInMW scaled by FullLoadHoursPerYear / 8760. This scaling factor is not applied in the FROM_FILE mode, however."
+      DispatchTimeSeries:
+        AttributeType: time_series
+        List: false
+        Mandatory: false
+        MetaData:
+          description: "Only used in mode FROM_FILE: determines the available power output by multiplication with InstalledPowerInMW."
+          isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "dispatch assignment", "@id": "OEO_00140136"}]
+      Refinancing: *PPO_G_Refinancing
+    Products:
+      MarginalCost: *PPO_P_MarginalCost
+      MarginalCostForecast: *PPO_P_MarginalCostForecast
+      AnnualCostReport: *PPO_P_AnnualCostReport
+      SetRegistration: *RPO_P_SetRegistration
+    Outputs:
+      AwardedEnergyInMWH: *PPO_O_AwardedEnergy
+      OfferedEnergyInMWH: *PPO_O_OfferedEnergy
+      ReceivedMoneyInEUR: *PPO_O_ReceivedMoney
+      VariableCostsInEUR: *PPO_O_VariableCosts
+      FixedCostsInEUR: *PPO_O_FixedCosts
+      InvestmentAnnuityInEUR: *PPO_O_InvestmentAnnuity
+    MetaData:
+      description: "The Biogas Agent is a renewable RenewablePlantOperator. It burns biogas produced in local bioreactors using combustion engines to generate electricity. The plant is assumed to have either a constant electricity output, or to have flexible electricity generation utilising short-term biogas buffer storages."
+      subject: [{name: "power plant operator", "@id": "OEO_00140130"}]
+      keywords: ["electricity", "power plant", "generation", "renewable", "biogas"]
+
+  PredefinedPlantBuilder:
+    Attributes:
+      PortfolioBuildingOffsetInSeconds: &PBM_A_PortfolioBuildingOffset
+        AttributeType: long
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Time offset between contracted delivery time of the portfolio and their actual first activation."
+          unit: s
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      Prototype: &PBM_G_Prototype
+        AttributeType: block
+        Mandatory: true
+        List: false
+        NestedAttributes:
+          FuelType: *FuelsTrader_A_FuelType
+          SpecificCo2EmissionsInTperMWH: &PBM_A_SpecificCo2Emissions
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Specific CO2-emissions in tons per thermal MWh."
+              unit: t/MWh
+              isAbout: [{name: "CO2 emission", "@id": "OEO_00260007"}, {name: "emission factor", "@id": "OEO_00000148"}]
+          OutageFactor: &PBM_A_OutageFactor
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData: &PBM_A_OutageFactor_Metadata
+              description: "Share of the respective power plant(s) that is not available for electricity production."
+              unit: 1
+              isAbout: [{name: "outage", "@id": "OEO_00020104"}]
+          OpexVarInEURperMWH: &PBM_A_OpexVar
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The variable cost of the respective power plant technology."
+              unit: EUR/MWh
+              isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+          CyclingCostInEURperMW: &PBM_A_CyclingCost
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Additional cycling costs for conventional power plants in Euro per Megawatt, i.e. costs due to plant start up."
+              unit: EUR/MW
+              isAbout: [{name: "ramping", "@id": "OEO_00260001"}, {name: "cost", "@id": "OEO_00040009"}]
+          MustRunFactor: &PBM_A_MustRunFactor
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Share of the installed capacity that must run and may not shut down."
+              unit: 1
+        MetaData:
+          description: "A prototype for similar powerplants"
+          isAbout: [{name: "power plant", "@id": "OEO_00000031"}]
+      Efficiency:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        NestedAttributes:
+          Minimal:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The minimum efficiency of the respective power plant technology."
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}, {name: "minimum", "@id": "OEO_00140072"}]
+          Maximal:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The maximal efficiency of the respective power plant technology."
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}, {name: "maximum", "@id": "OEO_00140073"}]
+        MetaData:
+          description: "Group of efficiency attributes (minimal, maximal)."
+          isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+      BlockSizeInMW:
+        AttributeType: double
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Defines the typical power capacity of a PowerPlant within the Portfolio to generate."
+          unit: MW
+          isAbout: [{name: "block size", "@id": "OEO_00140128"}]
+      InstalledPowerInMW:
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Time series of total installed power for the respective plant technology managed by this PredefinedPlantBuilder."
+          unit: MW
+          isAbout: [{name: "power capacity", "@id": "OEO_00010257"}]
+      EfficiencyRoundingPrecision:
+        AttributeType: integer
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Optional parameter: if present causes interpolated efficiencies to be rounded to the given number of digits."
+          unit: 1
+    Products:
+      PowerPlantPortfolio: &PBM_P_PowerPlantPortfolio
+        MetaData:
+          description: "The portfolio of technologies of a particular powerplant."
+          isAbout: [{name: "power plant portfolio", "@id": "OEO_00140137"}]
+    Outputs: []
+    MetaData:
+      description: "A PredefinedPlantBuilder is a PlantBuildingManager that creates Portfolios following given TimeSeries of installed total power and efficiencies for a given power plant technology."
+      subject: [{name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "power plant", "capacity"]
+
+  IndividualPlantBuilder:
+    Attributes:
+      PortfolioBuildingOffsetInSeconds: *PBM_A_PortfolioBuildingOffset
+      Prototype: *PBM_G_Prototype
+      Plants:
+        AttributeType: block
+        Mandatory: true
+        List: true
+        MetaData:
+          description: "List of power plants in the portfolio"
+          isAbout: [{name: "power plant portfolio", "@id": "OEO_00140137"}]
+        NestedAttributes:
+          Efficiency:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The efficiency of the plant in converting fuel to electricity."
+              unit: 1
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+          NetCapacityInMW:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Net electricity production capacity"
+              unit: MW
+              isAbout: [{name: "block size", "@id": "OEO_00140128"}]
+          ActivationTime:
+            AttributeType: TIME_STAMP
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Time at which the power plants becomes available. No electricity is produced before that time."
+              isAbout: [{name: "time stamp", "@id": "OEO_00140043"}]
+          DeactivationTime:
+            AttributeType: TIME_STAMP
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Time at which the power plants becomes unavailable. No electricity is produced at that time or later."
+              isAbout: [{name: "time stamp", "@id": "OEO_00140043"}]
+          Id:
+            AttributeType: STRING
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Identification string for the associated power plant"
+              isAbout: [{name: "identifier", "@id": "http://purl.org/dc/elements/1.1/identifier"}]
+          Override:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Values given here override those specified in the associated portfolio"
+            NestedAttributes:
+              OutageFactor:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                MetaData: *PBM_A_OutageFactor_Metadata
+              OpexVarInEURperMWH:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "The variable cost of the respective power plant technology."
+                  unit: EUR/MWh
+                  isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+              CyclingCostInEURperMW:
+                AttributeType: double
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Additional cycling costs for conventional power plants in Euro per Megawatt, i.e. costs due to plant start up."
+                  unit: EUR/MW
+                  isAbout: [{name: "ramping", "@id": "OEO_00260001"}, {name: "cost", "@id": "OEO_00040009"}]
+              MustRunFactor:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Share of the installed capacity that must run and may not shut down."
+                  unit: 1
+    Products:
+      PowerPlantPortfolio: *PBM_P_PowerPlantPortfolio
+    Outputs: []
+    MetaData:
+      description: "A power plant builder that creates portfolios from a predefined list of power plants."
+      subject: [{name: "agent", "@id": "OEO_00000051"}]
+      keywords: ["electricity", "power plant", "capacity"]
+
+  ElectrolysisTrader:
+    Attributes:
+      FuelType: *FuelsTrader_A_FuelType
+      Refinancing: *AnnualCostCalculator_G_Refinancing
+      Device: &Electrolyzer_G_Device
+        AttributeType: block
+        Mandatory: true
+        List: false
+        NestedAttributes:
+          PeakConsumptionInMW:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The peak electricity consumption"
+              unit: MW
+              isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}, {name: "power rating", "@id": "OEO_00230001"}]
+          ConversionFactor:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            help: "Factor < 1 to convert electric energy to hydrogen's thermal energy equivalent"
+            MetaData:
+              description: "Factor < 1 to convert electric energy to hydrogen's thermal energy equivalent."
+              unit: 1
+              isAbout: [{name: "energy conversion efficiency", "@id": "OEO_00140049"}]
+        MetaData:
+          description: "Technical details of the electrolysis device to administrate."
+      Strategy:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Strategy parameters to operate the electrolyser unit"
+        NestedAttributes:
+          StrategistType:
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Type of strategist employed to dispatch the electrolyzer unit"
+            Values:
+              DISPATCH_FILE:
+                MetaData:
+                  description: "Creates the dispatch schedule according to a given TimeSeries."
+              SINGLE_AGENT_SIMPLE:
+                MetaData:
+                  description: "Schedules based on a moving target of hydrogen production totals and electricity prices"
+          ForecastPeriodInHours: &ElectrolysisTrader_Strategy_A_ForecastPeriod
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of hours to the future at which the forecast is available. Must be smaller or equal to that of the MarketForecaster."
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}, {name: "forecast", "@id": "OEO_00010411"}]
+          ScheduleDurationInHours: &ElectrolysisTrader_Strategy_A_ScheduleDuration
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of hours each created schedule is viable"
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          BidToleranceInEURperMWH: &ElectrolysisTrader_Strategy_A_BidTolerance
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Tolerance value added to each calculated electricity bid in EUR/MWh."
+              unit: EUR/MWh
+              isAbout: [{name: "bid", "@id": "OEO_00140121"}]
+          PriceLimitOverrideInEURperMWH: &ElectrolysisTrader_Strategy_A_PriceLimitOverride
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Overrides electricity price bidding limit otherwise inferred from hydrogen price"
+              unit: EUR/MWh
+              isAbout: [{name: "electricity price", "@id": "OEO_00020117"}]
+          FixedDispatch:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Dispatch specifications for the DISPATCH_FILE strategist"
+              isAbout: [{name: "dispatch assignment", "@id": "OEO_00140136"}]
+            NestedAttributes:
+              HourlySchedule:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Describes the dispatch of the corresponding electrolyzer; its interpretation also depends on Mode and Target values."
+                  unit: 1
+                  isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "net capacity factor", "@id": "OEO_00240016"}]
+              Mode:
+                AttributeType: enum
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Dispatch time series interpretation: mode of value interpretation"
+                Values:
+                  ABSOLUTE:
+                    MetaData:
+                      description: "Schedule time series is interpreted as absolute conversion energy in MWh."
+                  RELATIVE:
+                    MetaData:
+                      description: "Schedule time series is interpreted as conversion rate relative to peak conversion capacity."
+                help: "Whether schedule is absolute or relative to installed converter power"
+              Target:
+                AttributeType: enum
+                Mandatory: true
+                List: false
+                Values:
+                  ELECTRICITY:
+                    MetaData:
+                      description: "Time series is interpreted as electricity consumption"
+                  HYDROGEN:
+                    MetaData:
+                      description: "Time series is interpreted as hydrogen production"
+                help: "Whether the schedule represent hydrogen production or electricity consumption"
+                MetaData:
+                  description: "Dispatch time series interpretation: associated value"
+          Simple:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Dispatch specifications for the SINGLE_AGENT_SIMPLE strategist"
+            NestedAttributes:
+              HydrogenProductionTargetInMWH:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                help: "How much hydrogen to produce per production interval"
+                MetaData:
+                  description: "Time series specifying the targeted total hydrogen production within the ProductionTargetIntervalInHours; Important: Always synchronise data points with production target interval (e.g.: production interval X hours → total hydrogen production target specifications every X hours)."
+                  unit: MWh
+                  isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "fuel production", "@id": "OEO_00010420"}]
+              ProductionTargetIntervalInHours:
+                AttributeType: integer
+                Mandatory: true
+                List: false
+                help: "How many hours a production interval spans"
+                MetaData:
+                  description: "Time resolution of HydrogenProductionTargetInMWH time series data points; Beware: If this time resolution does not match that of the time series and time series is anything other than a constant → results will be wrong! Attention: Value should not be smaller than forecast period!"
+                  unit: h
+                  isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+              PriceSensitivityFunction:
+                AttributeType: double
+                Mandatory: true
+                List: true
+                help: "Prefactors of a polynomial function describing price change per additional load in EUR per MWH per MWH"
+                MetaData:
+                  description: "Estimate of how the electricity price rises with increasing the demand at a given price (i.e. price change per demand change over price); given as linear factors of a Polynomial."
+                  unit: 1
+              PowerStepInMW:
+                AttributeType: double
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Energy resolution of the algorithm: the smaller, the more steps are required to complete the algorithm."
+                  unit: MW
+      Support: &HydrogenSupportClient_G_Support
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+            description: "Parameters specifying which hydrogen support policy to apply"
+        NestedAttributes:
+          SupportInstrument: &HydrogenSupportClient_A_SupportInstrument
+            MetaData:
+              description: "Name of the support instrument to apply for"
+              isAbout: [{name: "remuneration", "@id": "OEO_00020125"}]
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              MPFIX:
+                MetaData:
+                  description: "A fixed market premium"
+                  isAbout: [{name: "market premium", "@id": "OEO_00020109"}]
+          HydrogenPolicySet: *HydrogenSupportPolicy_A_HydrogenPolicySet
+    Products:
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      PriceForecastRequest: *ForecastClient_P_PriceForecastRequest
+      AnnualCostReport: *FlexibilityTrader_P_AnnualCostReport
+      FuelPriceForecastRequest: *FuelsTrader_P_FuelPriceForecastRequest
+      FuelPriceRequest: *FuelsTrader_P_FuelPriceRequest
+      FuelBid: *FuelsTrader_P_FuelBid
+      SupportInfoRequest: &HydrogenSupportClient_P_SupportInfoRequest
+        MetaData:
+          description: "Registration for hydrogen support instrument"
+      SupportPayoutRequest: &HydrogenSupportClient_P_SupportPayoutRequest
+        MetaData:
+          description: "Request for hydrogen support payout"
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      FixedCostsInEUR: *FlexibilityTrader_O_FixedCosts
+      InvestmentAnnuityInEUR: *FlexibilityTrader_O_InvestmentAnnuity
+      VariableCostsInEUR: *FlexibilityTrader_O_VariableCosts
+      ReceivedMoneyInEUR: *FlexibilityTrader_O_ReceivedMoney
+      ReceivedMoneyForHydrogenInEUR: &ElectrolysisTrader_O_ReceivedMoneyForHydrogen
+        MetaData:
+          description: "Total received money for selling hydrogen in EUR"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      OfferedElectricityPriceInEURperMWH: &ElectrolysisTrader_O_OfferedElectricityPrice
+        MetaData:
+          description: "Offered electricity price in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      ProducedHydrogenInMWH: &ElectrolysisTrader_O_ProducedHydrogen
+        MetaData:
+          description: "Produced amount of hydrogen in thermal MWh"
+          unit: MWh
+          isAbout: [{name: "hydrogen", "@id": "OEO_00000220"}, {name: "fuel production", "@id": "OEO_00010420"}]
+      ReceivedHydrogenSupportInEUR: &HydrogenSupportClient_O_ReceivedHydrogenSupportInEUR
+        MetaData:
+          description: "Received support for hydrogen in EUR"
+          unit: EUR
+          isAbout: [{name: "remuneration", "@id": "OEO_00020125"}, {name: "hydrogen", "@id": "OEO_00000220"}, {name: "fuel production", "@id": "OEO_00010420"}]
+    MetaData:
+      description: "ElectrolysisTrader is a type of FlexibilityTrader that operates an electrolyzer unit to produce hydrogen from electricity."
+      subject: [{name: "water electrolysis process", "@id": "OEO_00010219"}, {name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electrolysis", "hydrogen", "electricity", "trading"]
+
+  GreenHydrogenTrader:
+    Attributes:
+      Device: *Electrolyzer_G_Device
+      FuelType: *FuelsTrader_A_FuelType
+      Refinancing: *AnnualCostCalculator_G_Refinancing
+      Support: *HydrogenSupportClient_G_Support
+    Products:
+      PpaInformationRequest: &GreenHydrogenProducer_P_PpaInformationRequest
+        MetaData:
+          description: "Request for available power and price from a renewable power plant operator contracted via a Power Purchase Agreement"
+      PpaInformationForecastRequest: &GreenHydrogenProducer_P_PpaInformationForecastRequest
+        MetaData:
+          description: "Request for available power and price at a future time from a renewable power plant operator contracted via a Power Purchase Agreement"
+      AnnualCostReport: *FlexibilityTrader_P_AnnualCostReport
+      FuelPriceForecastRequest: *FuelsTrader_P_FuelPriceForecastRequest
+      FuelPriceRequest: *FuelsTrader_P_FuelPriceRequest
+      FuelBid: *FuelsTrader_P_FuelBid
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      Payout: *PowerPlantScheduler_P_Payout
+      DispatchAssignment: *PowerPlantScheduler_P_DispatchAssignment
+      SupportInfoRequest: *HydrogenSupportClient_P_SupportInfoRequest
+      SupportPayoutRequest: *HydrogenSupportClient_P_SupportPayoutRequest
+    Outputs:
+      ConsumedElectricityInMWH: &GreenHydrogenProducer_O_ConsumedElectricity
+        MetaData:
+          description: "Amount of electricity consumed in this period for operating the electrolysis unit"
+          unit: MWh
+          isAbout: [{name: "energy use", "@id": "OEO_00010210"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      ProducedHydrogenInMWH:
+        MetaData:
+          description: "Amount of green hydrogen produced in this period using the electrolysis unit"
+          unit: MWh
+          isAbout: [{name: "hydrogen", "@id": "OEO_00000220"}, {name: "fuel production", "@id": "OEO_00010420"}]
+      VariableCostsInEUR:
+        MetaData:
+          description: "Variable operation and maintenance costs in EUR"
+          unit: EUR
+          isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+      ReceivedMoneyForHydrogenInEUR:
+        MetaData:
+          description: "Total received money for selling hydrogen in EUR"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}, {name: "hydrogen", "@id": "OEO_00000220"}]
+      ReceivedMoneyForElectricityInEUR: &GreenHydrogenProducer_O_ReceivedMoneyForElectricity
+        MetaData:
+          description: "Total received money for selling electricity in EUR"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      OfferedSurplusEnergyInMWH:
+        MetaData:
+          description: "Surplus electricity generation offered to the day-ahead market in MWh"
+          unit: MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      ReceivedHydrogenSupportInEUR: *HydrogenSupportClient_O_ReceivedHydrogenSupportInEUR
+    MetaData:
+      description: "A green hydrogen electrolysis operator; It purchases electricity directly from renewable power plants operators."
+      subject: [{name: "water electrolysis process", "@id": "OEO_00010219"}, {name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electrolysis", "hydrogen", "electricity", "trading"]
+
+  LoadShiftingTrader:
+    Attributes:
+      LoadShiftingPortfolio:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "A portfolio of loads that are eligible for load shifting and whose flexibility is marketed by the respective LoadShiftingTrader"
+        NestedAttributes:
+          InitialEnergyLevelInMWH:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The (fictitious) initial level of load shifting portfolio in MWh"
+              unit: MWh
+              isAbout: [{name: "energy storage content", "@id": "OEO_00330012"}]
+          InitialShiftTimeInHours:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The time which the load shifting portfolio has already been shifted for at the start of the simulation in hours"
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          PowerInMW:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Maximum power in MW of load shifting portfolio that can be shifted up or down"
+              unit: MW
+              isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}, {name: "power capacity", "@id": "OEO_00010257"}]
+          PowerUpAvailability:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Availability time series for power shifts in upwards direction (increased load), relative to PowerInMW"
+              unit: 1
+              isAbout: [{name: "net capacity factor", "@id": "OEO_00240016"}, {name: "maximum", "@id": "OEO_00140073"}]
+          PowerDownAvailability:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Availability time series for power shifts in downwards direction (decreased load), relative to PowerInMW"
+              unit: 1
+              isAbout: [{name: "net capacity factor", "@id": "OEO_00240016"}, {name: "minimum", "@id": "OEO_00140072"}]
+          EnergyResolutionInMWH:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The resolution of discrete energy steps for any strategist other than ShiftProfitMaximiserExternal in MWh"
+              unit: MWh
+              isAbout: [{name: "resolution", "@id": "OEO_00020121"}, {name: "energy", "@id": "OEO_00000150"}]
+          EnergyLimitUpInMWH:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The absolute energy limit for a shift in upwards direction (increased load) in MWh"
+              unit: MWh
+              isAbout: [{name: "energy", "@id": "OEO_00000150"}, {name: "maximum", "@id": "OEO_00140073"}]
+          EnergyLimitDownInMWH:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The absolute energy limit for a shift in downwards direction (decreased load) in MWh"
+              unit: MWh
+              isAbout: [{name: "energy", "@id": "OEO_00000150"}, {name: "minimum", "@id": "OEO_00140072"}]
+          MaximumShiftTimeInHours:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The maximum allowed time for a load shift in hours, including the initial hour of shifting"
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}, {name: "maximum", "@id": "OEO_00140073"}]
+          VariableShiftCostsInEURPerMWH:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The variable costs of a load shift given in EUR per MWh and attributed onto both, upshifts and downshifts"
+              unit: EUR/MWh
+              isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+          BaselineLoadTimeSeries:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The originally planned load consumption before any load shifting given as a time series relative to BaselinePeakLoadInMW"
+              unit: MW
+              isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}]
+          BaselinePeakLoadInMW:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "The maximum peak load occurring before load shifting in MW"
+              unit: MW
+              isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}, {name: "maximum", "@id": "OEO_00140073"}]
+          Efficiency:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The efficiency of load shifting which must be between 0 and 1 (inclusive)"
+              unit: 1
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+          InterferenceTimeInHours:
+            AttributeType: integer
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The maximum allowed time for an upshift resp. a downshift as part of a shifting process, used only for strategist ShiftProfitMaximiserExternal"
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          MaximumActivations:
+            AttributeType: integer
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The maximum number of full shift cycles over the course of the planning period (e.g. one year)"
+              unit: 1
+              isAbout: [{name: "maximum", "@id": "OEO_00140073"}, {name: "count unit", "@id": "UO_0000189"}]
+      Strategy:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Group of parameters to describe the dispatch strategy for the load shifting parameter."
+        NestedAttributes:
+          StrategistType:
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              SINGLE_AGENT_MAX_PROFIT:
+                MetaData:
+                  description: "Seeks to maximise the profit from load shifting"
+              SINGLE_AGENT_MIN_SYSTEM_COST:
+                MetaData:
+                  description: "Seeks to minimise the cost from load shifting"
+              DISPATCH_FILE:
+                MetaData:
+                  description: "Creates a DispatchSchedule following a given TimeSeries for an energy pattern and one for a shift time pattern, both read from input file. It can provide forecasts regarding its behaviour."
+              SINGLE_AGENT_MAX_PROFIT_TARIFFS:
+                MetaData:
+                  description: "Seeks to maximise the profit from load shifting thereby also considering tariff structures in addition to day-ahead electricity prices"
+              SINGLE_AGENT_MIN_CONSUMER_COST_EXTERNAL:
+                MetaData:
+                  description: "Seeks to minimise the total costs of energy consumption from load shifting thereby also considering tariff structures in addition to day-ahead electricity prices; Calls an external optimization micro-model for load shifting scheduling."
+            MetaData:
+              description: "Type of dispatch strategy to be applied for load shifting scheduling"
+          ForecastPeriodInHours: *Strategist_A_ForecastPeriod
+          ScheduleDurationInHours: *Strategist_A_ScheduleDuration
+          BidToleranceInEURperMWH: *Strategist_A_BidTolerance
+          SingleAgent:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Parameters for single agent strategies"
+            NestedAttributes:
+              PurchaseLeviesAndTaxesInEURperMWH:
+                AttributeType: double
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Taxes and levies for load shifting consumers that are due on a per MWh basis"
+                  unit: EUR/MWh
+                  isAbout: [{name: "tax", "@id": "OEO_00020112"}]
+          FixedDispatch:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Parameters for DISPATCH_FILE strategy"
+            NestedAttributes:
+              EnergySchedule:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Time series of energy to be shifted, relative to upwards resp. downwards energy limits"
+                  unit: 1
+                  isAbout: [{name: "dispatch assignment", "@id": "OEO_00140136"}, {name: "time series", "@id": "OEO_00030034"}]
+              ShiftTimeSchedule:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Time series for evolvement of current shifting time"
+                  unit: h
+                  isAbout: [{name: "time span", "@id": "OEO_00030035"}, {name: "time series", "@id": "OEO_00030034"}]
+          Api:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Parameters for SINGLE_AGENT_MIN_ENERGY_COSTS_EXTERNAL strategy"
+            NestedAttributes:
+              ServiceUrl:
+                AttributeType: string
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "URL for the model service used"
+                  isAbout: [{name: "identifier", "@id": "http://purl.org/dc/elements/1.1/identifier"}]
+              UseAnnualLimit:
+                AttributeType: integer
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Boolean specifying whether to use annual limits"
+                  isAbout: [{name: "boolean variable", "@id": "OEO_00000078"}]
+              Solver:
+                AttributeType: enum
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Solver to use for solving load shifting scheduling optimization problem"
+                Values:
+                  gurobi:
+                    MetaData:
+                      description: "Gurobi Optimization solver"
+                  cplex:
+                    MetaData:
+                      description: "IBM's CPLEX solver"
+                  cbc:
+                    MetaData:
+                      description: "COIN OR's CBC solver"
+                  glpk:
+                    MetaData:
+                      description: "GNU Linear Programming Kit solver"
+              PriceSensitivityEstimate:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Estimate for the price sensitivity, i.e. the price change due to increased/decreased load"
+      Policy: &EndUserTariff_G_Policy
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Group of parameters defining tariff policy for an end user flexibility trader"
+          isAbout: [{name: "policy", "@id": "OEO_00140150"}]
+        NestedAttributes:
+          EEGSurchargeInEURPerMWH:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "The EEG levy (levy from German renewable energy act - EEG) in EUR per MWh"
+              unit: EUR/MWh
+              isAbout: [{name: "levy", "@id": "OEO_00020110"}]
+          VolumetricNetworkChargeInEURPerMWH:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Volumetric network charges, i.e. charges dependent on consumed energy in EUR per MWh"
+              unit: EUR/MWh
+              isAbout: [{name: "levy", "@id": "OEO_00020110"}]
+          ElectricityTaxInEURPerMWH:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Electricity tax in EUR per MWh"
+              unit: EUR/MWh
+              isAbout: [{name: "tax", "@id": "OEO_00020112"}]
+          OtherSurchargesInEURPerMWH:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Other surcharges, such as CHP levy, § 19 StromNEV levy, concession fee, ... in EUR per MWh"
+              unit: EUR/MWh
+              isAbout: [{name: "levy", "@id": "OEO_00020110"}]
+          DynamicTariffComponents:
+            AttributeType: block
+            List: true
+            Mandatory: false
+            MetaData:
+              description: "Group of tariff components that are made dynamic, i.e. varying with the model-endogenous day-ahead price"
+            NestedAttributes:
+              ComponentName:
+                AttributeType: enum
+                Mandatory: true
+                List: false
+                Values:
+                  POWER_PRICE:
+                    MetaData:
+                      description: "power price component corresponding to the day-ahead power price"
+                  EEG_SURCHARGE:
+                    MetaData:
+                      description: "The EEG levy (levy from German renewable energy act - EEG)"
+                  VOLUMETRIC_NETWORK_CHARGE:
+                    MetaData:
+                      description: "Volumetric network charges, i.e. charges dependent on consumed energy in EUR per MWh"
+                  OTHER_COMPONENTS:
+                    MetaData:
+                      description: "Other surcharges, such as CHP levy, § 19 StromNEV levy, concession fee, ... "
+              Multiplier:
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Multiplier used for calculating dynamic tariff component from model-endogenous day-ahead price"
+              LowerBound:
+                AttributeType: double
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Lower price bound to cap tariff component at"
+              UpperBound:
+                AttributeType: double
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Upper price bound to cap tariff component at"
+          VAT:
+            AttributeType: double
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Value added tax multiplier in per cent"
+              unit: 1
+              isAbout: [{name: "tax", "@id": "OEO_00020112"}]
+          CapacityBasedNetworkChargesInEURPerMW:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Network charges based on peak consumption capacity for planning period (year) in EUR per MW"
+              unit: EUR/MW
+              isAbout: [{name: "levy", "@id": "OEO_00020110"}]
+          FixedNetworkChargesInEURPerYear:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Fixed network charges based on peak consumption capacity for planning period in EUR per MW"
+              unit: EUR/MW
+              isAbout: [{name: "levy", "@id": "OEO_00020110"}]
+      BusinessModel: &EndUserTariff_G_BusinessModel
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Group of parameters specifying the business model of an aggregator"
+            NestedAttributes:
+              ProfitMarginInEURPerMWH:
+                AttributeType: double
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "Assumed absolute margin of an aggregator providing electricity to its end users"
+                  unit: EUR/MWh
+              AverageMarketPriceInEURPerMWH:
+                AttributeType: time_series
+                Mandatory: false
+                List: false
+                MetaData:
+                  description: "The average market price in EUR per MWh to be applied in case of a static tariff"
+                  unit: EUR/MWh
+                  isAbout: [{name: "electricity price", "@id": "OEO_00020117"}, {name: "arithmetic mean", "@id": "OEO_00140071"}]
+    Products:
+      Bids: *DamTrader_P_Bids
+      Payout: *PowerPlantScheduler_P_Payout
+      DispatchAssignment: *PowerPlantScheduler_P_DispatchAssignment
+      BidsForecast: *Trader_P_BidsForecast
+      MeritOrderForecastRequest: *ForecastClient_P_MeritOrderForecastRequest
+      PriceForecastRequest: *ForecastClient_P_PriceForecastRequest
+      GateClosureForward: *TraderWithClients_P_GateClosureForward
+      ForecastRequestForward: *TraderWithClients_P_ForecastRequestForward
+    Outputs:
+      OfferedUpshiftPowerInMW:
+        MetaData:
+          description: "power offered to be shifted in upwards direction (load increase) compared to baseline load consumption"
+          unit: MW
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      OfferedDownshiftPowerInMW:
+        MetaData:
+          description: "power offered to be shifted in downwards direction (load reduction) compared to baseline load consumption"
+          unit: MW
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      OfferedPriceInEURperMWH:
+        MetaData:
+          description: "offered bid price to sell / purchase power at"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      AwardedUpshiftPowerInMW:
+        MetaData:
+          description: "power awarded to be shifted in upwards direction (load increase) compared to baseline load consumption"
+          unit: MW
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedDownshiftPowerInMW:
+        MetaData:
+          description: "power awarded to be shifted in downwards direction (load reduction) compared to baseline load consumption"
+          unit: MW
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      NetAwardedPowerInMW:
+        MetaData:
+          description: "net power awarded to be shifted compared to baseline load consumption"
+          unit: MW
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      StoredMWH:
+        MetaData:
+          description: "(fictitious) load shifting energy storage level"
+          unit: MWh
+          isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+      CurrentShiftTimeInH:
+        MetaData:
+          description: "number of consecutive hours for which the load shifting portfolio has already been shifted into one direction (upwards or downwards), i.e. for which the (fictitious) load shifting energy storage level is already unbalanced"
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      RevenuesInEUR:
+        MetaData:
+          description: "revenues from marketing power in the course of a downshift (load decrease)"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      CostsInEUR:
+        MetaData:
+          description: "total costs for load shifting comprising costs for purchasing power in the course of an upshift (load increase) as well as variable costs for load shifting"
+          unit: EUR
+          isAbout: [{name: "cost", "@id": "OEO_00040009"}]
+      VariableShiftingCostsInEUR:
+        MetaData:
+          description: "variable costs for load shifting"
+          unit: EUR
+          isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+      ProfitInEUR:
+        MetaData:
+          description: "revenues minus all variable costs"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      VariableShiftingCostsFromOptimiserInEUR:
+        MetaData:
+          description: "variable costs for load shifting from optimization micro-model, called for strategist SINGLE_AGENT_MIN_CONSUMER_COSTS_EXTERNAL"
+          unit: EUR
+          isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+    MetaData:
+      description: "An aggregator marketing a portfolio of flexibile loads that are eligible for load shifting; It can apply different strategies for dispatch scheduling."
+      subject: [{name: "demand trader", "@id": "OEO_00140140"}]
+      keywords: ["electricity", "trading", "demand response"]
+
+  GreenHydrogenTraderMonthly:
+    Attributes:
+      FuelType: *FuelsTrader_A_FuelType
+      Refinancing: *AnnualCostCalculator_G_Refinancing
+      Device: *Electrolyzer_G_Device
+      Strategy:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Strategy parameters to operate the electrolyser unit"
+        NestedAttributes:
+          StrategistType:
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Type of strategist employed to dispatch the electrolyzer unit"
+            Values:
+              GREEN_HYDROGEN_MONTHLY:
+                MetaData:
+                  description: "Creates the dispatch schedule thereby ensuring monthly equivalence between the electrolysis demand and the associated renewable generation."
+          ForecastPeriodInHours: *ElectrolysisTrader_Strategy_A_ForecastPeriod
+          ScheduleDurationInHours: *ElectrolysisTrader_Strategy_A_ScheduleDuration
+          BidToleranceInEURperMWH: *ElectrolysisTrader_Strategy_A_BidTolerance
+          PriceLimitOverrideInEURperMWH: *ElectrolysisTrader_Strategy_A_PriceLimitOverride
+      Support: *HydrogenSupportClient_G_Support
+    Products:
+      PpaInformationRequest: *GreenHydrogenProducer_P_PpaInformationRequest
+      PpaInformationForecastRequest: *GreenHydrogenProducer_P_PpaInformationForecastRequest
+      Bids: *DamTrader_P_Bids
+      BidsForecast: *Trader_P_BidsForecast
+      PriceForecastRequest: *ForecastClient_P_PriceForecastRequest
+      AnnualCostReport: *FlexibilityTrader_P_AnnualCostReport
+      FuelPriceForecastRequest: *FuelsTrader_P_FuelPriceForecastRequest
+      FuelPriceRequest: *FuelsTrader_P_FuelPriceRequest
+      FuelBid: *FuelsTrader_P_FuelBid
+      Payout: *PowerPlantScheduler_P_Payout
+      DispatchAssignment: *PowerPlantScheduler_P_DispatchAssignment
+      MonthlyReset:
+        MetaData:
+          description: "Request for reset of monthly schedule"
+      SupportInfoRequest: *HydrogenSupportClient_P_SupportInfoRequest
+      SupportPayoutRequest: *HydrogenSupportClient_P_SupportPayoutRequest
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      FixedCostsInEUR: *FlexibilityTrader_O_FixedCosts
+      InvestmentAnnuityInEUR: *FlexibilityTrader_O_InvestmentAnnuity
+      VariableCostsInEUR: *FlexibilityTrader_O_VariableCosts
+      ReceivedMoneyInEUR: *FlexibilityTrader_O_ReceivedMoney
+      OfferedEnergyPriceInEURperMWH: *ElectrolysisTrader_O_OfferedElectricityPrice
+      ProducedHydrogenInMWH: *ElectrolysisTrader_O_ProducedHydrogen
+      ConsumedElectricityInMWH: *GreenHydrogenProducer_O_ConsumedElectricity
+      ReceivedMoneyForHydrogenInEUR: *ElectrolysisTrader_O_ReceivedMoneyForHydrogen
+      ReceivedMoneyForElectricityInEUR: *GreenHydrogenProducer_O_ReceivedMoneyForElectricity
+      ReceivedHydrogenSupportInEUR: *HydrogenSupportClient_O_ReceivedHydrogenSupportInEUR
+    MetaData:
+      description: "GreenHydrogenTraderMonthly is a type of ElectrolysisTrader that operates an electrolyzer unit to produce hydrogen from green electricity purchased via a PPA ensuring monthly equivalence."
+      subject: [{name: "water electrolysis process", "@id": "OEO_00010219"}, {name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electrolysis", "hydrogen", "electricity", "trading"]
+
+  HeatPumpTrader:
+    Attributes:
+      StrategyBasic:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Group of parameters defining basics of the heat pump dispatch strategy."
+        NestedAttributes:
+          ForecastPeriodInHours: *Strategist_A_ForecastPeriod
+          ScheduleDurationInHours: *Strategist_A_ScheduleDuration
+          BidToleranceInEURperMWH: *Strategist_A_BidTolerance
+      HeatPump:
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Group of parameters defining the properties of heat pumps."
+        NestedAttributes:
+          MinElectricHeatPumpPowerInKW:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Rated power at the design ambient temperature (typically -14 Celsius for air/water heat pumps)."
+              unit: kW
+              isAbout: [{name: "power value", "@id": "OEO_00010157"}]
+          MaxElectricHeatPumpPowerInKW:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Rated power at the upper ambient temperature for heat pump specification (typically +10 Celsius for air/water heat pumps) in kW."
+              unit: kW
+              isAbout: [{name: "power value", "@id": "OEO_00010157"}]
+          MinCOP:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Coefficient of performance at the design ambient temperature (typically -14 Celsius for air/water heat pumps) in kW."
+              unit: 1
+              isAbout: [{name: "coefficient of performance value", "@id": "OEO_00140051"}, {name: "minimum", "@id": "OEO_00140072"}]
+          MaxCOP:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Coefficient of performance at the upper ambient temperature for heat pump specification (typically +10 Celsius for air/water heat pumps)."
+              isAbout: [{name: "coefficient of performance value", "@id": "OEO_00140051"}, {name: "maximum", "@id": "OEO_00140073"}]
+          HeatPumpPenetrationFactor:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Share of heatDemandProfile that should be covered by heat pumps, in case heatDemandProfile is given."
+              unit: 1
+          InstalledUnits:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Total number of installed heat pumps, in case no heatDemandProfile is given."
+              unit: 1
+              isAbout: [{name: "count unit", "@id": "UO_0000189"}]
+      Device:
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Group of parameters defining the thermal storage used for strategist MIN_COST_FILE."
+          isAbout: [{name: "heat pump", "@id": "OEO_00000212"}]
+        NestedAttributes:
+          EnergyToPowerRatio: *Device_A_EnergyToPowerRatio
+          SelfDischargeRatePerHour: *Device_A_SelfDischargeRatePerHour
+          ChargingEfficiency: *Device_A_ChargingEfficiency
+          DischargingEfficiency: *Device_A_DischargingEfficiency
+          InitialEnergyLevelInMWH: *Device_A_InitialEnergyLevelInMWH
+          InstalledPowerInMW: *Device_A_InstalledPowerInMW
+      HeatingInputData:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Group of input time series required for the calculation of electricity demand of heat pumps."
+          isAbout: [{name: "heat pump", "@id": "OEO_00000212"}, {name: "electricity demand", "@id": "OEO_00320062"}]
+        NestedAttributes:
+          TemperatureProfile:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Time series of ambient temperature at a specific location in Celsius."
+              unit: C
+              isAbout: [{name: "temperature", "@id": "OEO_00010453"}]
+          SolarRadiation:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Time series of total radiation on a vertical southern surface at a specific location"
+              unit: kW/(m*m)
+              isAbout: [{name: "solar radiation", "@id": "OEO_00020038"}]
+          HeatDemandProfile:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Time series of heat demand at an aggregate level (e.g. Germany)"
+              unit: MWh/h
+              isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}, {name: "time series", "@id": "OEO_00030034"}]
+          PvProfile:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Time series of pv yield at a specific location in kW/kWp."
+              unit: 1
+              isAbout: [{name: "yield profile", "@id": "OEO_00140139"}, {name: "PV panel", "@id": "OEO_00000348"}]
+      Strategy:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Group of parameters defining the dispatch strategy of heat pumps."
+        NestedAttributes:
+          ModelledChargingSteps:
+            AttributeType: integer
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Number of steps that is used to discretize the building's indoor air temperature."
+          HeatPumpStrategistType:
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              MIN_COST_RC:
+                MetaData:
+                  description: "Creates a cost-optimal dispatch schedule that satisfies a space heating demand that is endogenously calculated by a ThermalResponse model. Flexibility is provided by varying the indoor temperature of the building."
+              INFLEXIBLE_RC:
+                MetaData:
+                  description: "Creates an inflexible dispatch schedule that satisfies a space heating demand that is endogenously calculated by a ThermalResponse model. Heat pump operation is only oriented at current space heat demand, not at prices."
+              MIN_COST_FILE:
+                MetaData:
+                  description: "Creates a cost-optimal dispatch schedule from a given heat demand input time series. Flexibility is provided by a thermal storage."
+              INFLEXIBLE_FILE:
+                MetaData:
+                  description: "Creates an inflexible dispatch schedule from a given heat demand input time series that is independent of electricity prices."
+              EXTERNAL:
+                MetaData:
+                  description: "Creates a cost-optimal dispatch schedule according to real-time prices, which is endogenously calculated by a heat pump dispatch model."
+              MetaData:
+                description: "Type of strategist employed to dispatch heat pumps Possible types are MIN_COST_RC, INFLEXIBLE_RC, MIN_COST_FILE, INFLEXIBLE_FILE, EXTERNAL."
+          MinimalRoomTemperatureInC:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Minimum accepted indoor air temperature during the heating period in Celsius, in case a ThermalResponse model is used for heating demand calculation."
+              unit: C
+              isAbout: [{name: "temperature", "@id": "OEO_00010453"}, {name: "minimum", "@id": "OEO_00140072"}]
+          MaximalRoomTemperatureInC:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Maximum accepted indoor air temperature during the heating period in Celsius, in case a ThermalResponse model is used for heating demand calculation."
+              unit: C
+              isAbout: [{name: "temperature", "@id": "OEO_00010453"}, {name: "maximum", "@id": "OEO_00140073"}]
+          MeanRoomTemperatureInC:
+            AttributeType: time_series
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Average accepted indoor air temperature during the heating period in Celsius, in case a ThermalResponse model is used for heating demand calculation."
+              unit: C
+              isAbout: [{name: "temperature", "@id": "OEO_00010453"}, {name: "arithmetic mean", "@id": "OEO_00140071"}]
+          ApiParameters:
+            AttributeType: block
+            Mandatory: false
+            List: false
+            MetaData:
+              description: "Parameters for EXTERNAL strategist."
+            NestedAttributes:
+              ServiceUrl:
+                AttributeType: string
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "URL for the model service used."
+                  isAbout: [{name: "identifier", "@id": "http://purl.org/dc/elements/1.1/identifier"}]
+              StaticParameterFolder:
+                AttributeType: string
+                Mandatory: true
+                List: false
+                MetaData:
+                  description: "Folder that encapsulates all input data required for the external GAMS heat pump dispatch optimization model."
+      Building:
+        AttributeType: block
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "Group of parameters defining building thermodynamics for strategists MIN_COST_RC and INFLEXIBLE_RC."
+        NestedAttributes:
+          Ria:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Thermal resistance between the building interior and the ambient"
+              unit: K/kW
+          Ci:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Capacitance of the interior of the building"
+              unit: kWh/K
+          Ai:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Effective window area for absorption of solar gains on internal air in the building"
+              unit: m*m
+              isAbout: [{name: "area value", "@id": "OEO_00020143"}]
+          HeatingLimitTemperatureInC:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Ambient temperature above which heating is turned off"
+              unit: C
+              isAbout: [{name: "temperature", "@id": "OEO_00010453"}]
+          InternalHeatGainsInKW:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Internal heat gains inside the building in kW."
+              unit: kW
+      Policy: *EndUserTariff_G_Policy
+      BusinessModel: *EndUserTariff_G_BusinessModel
+    Products:
+      Bids: *DamTrader_P_Bids
+      MeritOrderForecastRequest: *ForecastClient_P_MeritOrderForecastRequest
+      PriceForecastRequest: *ForecastClient_P_PriceForecastRequest
+    Outputs:
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      COP:
+        MetaData:
+          description: "Coefficient of performance of heat pump."
+          unit: 1
+          isAbout: [{name: "coefficient of performance value", "@id": "OEO_00140051"}]
+      FinalRoomTemperatureInCelsius:
+        MetaData:
+          description: "Indoor air temperature in Celsius."
+          unit: C
+          isAbout: [{name: "temperature", "@id": "OEO_00010453"}]
+      StoredEnergyInMWH:
+        MetaData:
+          description: "Amount of heat stored in MWh."
+          unit: MWh
+          isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "HeatPumpTrader is a type of FlexibilityTrader that aggregates heat pumps in buildings and arranges procurement at the DayAheadMarket. Different strategies can be used to calculate the electricity demand of heat pumps. Heat pumps can be either dispatched according to heat demand or optimised according to spot market price forecasts."
+      subject: [{name: "heat pump", "@id": "OEO_00000212"}, {name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "trading", "heat pump"]
+
+  GenericFlexibilityTrader:
+    Attributes:
+      Refinancing: *AnnualCostCalculator_G_Refinancing
+      Device: &GenericDevice_G_Device
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "A generic device representing any kind of electrical flexibility, e.g., pumped-hydro storages with inflow, reservoir storages, heat pumps, electric vehicle fleets, or load-shifting portfolios."
+        NestedAttributes:
+          GrossChargingPowerInMW:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Gross maximum power for charging in MW drawn from the grid (external power)"
+              unit: MW
+              isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}, {name: "maximum", "@id": "OEO_00140073"}]
+          NetDischargingPowerInMW:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Net maximum power from discharging provided to grid (external power)"
+              isAbout: [{name: "power capacity", "@id": "OEO_00010257"}, {name: "maximum", "@id": "OEO_00140073"}]
+          ChargingEfficiency:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            Default: 1.
+            MetaData:
+              description: "Ratio between gross discharged energy drawn from the grid to net energy charging the flexibility device."
+              unit: 1
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+          DischargingEfficiency:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            Default: 1.
+            MetaData:
+              description: "Ratio between gross discharged energy from flexibility device to net energy fed to the grid."
+              unit: 1
+              isAbout: [{name: "efficiency value", "@id": "OEO_00140050"}]
+          EnergyContentUpperLimitInMWH:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Maximum internal energy content of the flexibility device"
+              isAbout: [{name: "energy storage content", "@id": "OEO_00330012"}, {name: "maximum", "@id": "OEO_00140073"}]
+          EnergyContentLowerLimitInMWH:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            Default: 0.
+            MetaData:
+              description: "Minimum internal energy content of the flexibility device"
+              isAbout: [{name: "energy storage content", "@id": "OEO_00330012"}, {name: "minimum", "@id": "OEO_00140072"}]
+          SelfDischargeRatePerHour:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            Default: 0.
+            MetaData:
+              description: "Hourly rate of energy loss relative to state of charge at beginning of each time interval; 0 means no self discharge; value between 0 and 1"
+              unit: 1/h
+          NetInflowPowerInMW:
+            AttributeType: time_series
+            Mandatory: true
+            List: false
+            Default: 0.
+            MetaData:
+              description: "Net inflow energy into the flexibility device (no charging efficiency applied; positive values are inflows, negative values represent outflows"
+              unit: MW
+              isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+          InitialEnergyContentInMWH:
+            AttributeType: double
+            Mandatory: true
+            List: false
+            Default: 0.
+            MetaData:
+              description: "The internal state of charge in MWH at the beginnig of the simulation"
+              unit: MWh
+              isAbout: [{name: "energy storage content", "@id": "OEO_00330012"}]
+      Assessment:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Configuration on how to assess the value of flexibility device states."
+        NestedAttributes:
+          Type:
+            MetaData:
+              description: "The type of assessment function"
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              MAX_PROFIT_PRICE_TAKER:
+                MetaData:
+                  Description: "Maximises profit using an electricity price forecast neglecting any price impact of bids"
+              MIN_SYSTEM_COST:
+                MetaData:
+                  Description: "Minimises total system costs using a merit order sensitivity forecast that takes into account the impact of bids from all GenericFlexibilityTraders"
+              MAX_PROFIT:
+                MetaData:
+                  Description: "Maximises own profits using a merit order sensitivity forecast that takes into account the impact of bids from all GenericFlexibilityTraders"
+      StateDiscretisation:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Configuration on how the flexibility device states are discretized in different dimensions, e.g., time, or energy"
+        NestedAttributes:
+          Type:
+            MetaData:
+              description: "The type of state manager to use"
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              STATE_OF_CHARGE:
+                MetaData:
+                  description: "Represent energy states of an electricity storage device"
+          PlanningHorizonInHours:
+            MetaData:
+              description: "Foresight time length in hours. Must be smaller or equal to that of the contracted Forecaster."
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+            AttributeType: double
+            Mandatory: true
+            List: false
+          EnergyResolutionInMWH:
+            MetaData:
+              description: "Resolution of the energy discretisation; lower values represent a higher resolution and better precision of planning, but come with (quadratically) higher calculation efforts."
+              unit: MWh
+              isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+            AttributeType: double
+            Mandatory: true
+            List: false
+          WaterValues:
+            MetaData:
+              description: "Parameters to define the (long-term) water values of the flexibility device depending on the state of charge and time"
+            AttributeType: block
+            Mandatory: false
+            List: true
+            NestedAttributes:
+              StoredEnergyInMWH:
+                MetaData:
+                  description: "The absolute state of charge of the flexibility device in MWh, which the associated water value timeseries applies to"
+                  unit: MWh
+                  isAbout: [{name: "energy storage content", "@id": "OEO_00330012"}]
+                AttributeType: double
+                Mandatory: true
+                List: false
+              WaterValueInEUR:
+                MetaData:
+                  description: "The absolute value in EUR of the associated absolute state of charge of the flexibility device"
+                  unit: EUR
+                  isAbout: [{name: "monetary value", "@id": "OEO_00040003"}]
+                AttributeType: time_series
+                Mandatory: true
+                List: false
+      Bidding:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Configuration on how to create bids from an optimised dispatch schedule"
+        NestedAttributes:
+          Type:
+            MetaData:
+              description: "The type of bid scheduler"
+            AttributeType: enum
+            Mandatory: true
+            List: false
+            Values:
+              ENSURE_DISPATCH:
+                MetaData:
+                  description: "Ensures planned dispatch is fulfilled by bidding at technical price limits"
+              STORAGE_CONTENT_VALUE:
+                MetaData:
+                  description: "Uses estimated value changes of storage content to calculate bidding price"
+          SchedulingHorizonInHours:
+            MetaData:
+              description: "Number time length each created schedule is viable in hours; should be significantly larger than the flexibilities energy-to-power ratio."
+              unit: h
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+            AttributeType: double
+            Mandatory: true
+            List: false
+    Products:
+      ForecastRegistration: &SensitivityForecastClient_P_ForecastRegistration
+        MetaData:
+          description: "Registration specifying the type of forecast needed and the client's installed power"
+      NetAward: &SensitivityForecastClient_P_NetAward
+        MetaData:
+          description: "Report on the client's awarded energy at the local day-ahead market at a previous time"
+          isAbout: [{name: "award", "@id": "OEO_00140122"}]
+      SensitivityRequest: &SensitivityForecastClient_P_SensitivityRequest
+        MetaData:
+          description: "Request for a sensitivity forecast, specifying a time for which the forecast is required"
+      Bids: *DamTrader_P_Bids
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      VariableCostsInEUR:
+        MetaData:
+          description: "Variable operation and maintenance costs in EUR"
+          unit: EUR
+          isAbout: [{name: "variable cost", "@id": "OEO_00020145"}]
+      ReceivedMoneyInEUR:
+        MetaData:
+          description: "Total received money in EUR"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      OfferedChargePriceInEURperMWH:
+        MetaData:
+          description: "Offered price for charging in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      OfferedDischargePriceInEURperMWH:
+        MetaData:
+          description: "Offered price for discharging in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      AwardedChargeEnergyInMWH:
+        MetaData:
+          description: "Total amount of charge energy awarded in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedDischargeEnergyInMWH:
+        MetaData:
+          description: "Total amount of discharge energy awarded in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      StoredEnergyInMWH:
+        MetaData:
+          description: "Amount of energy in stored in flexibility device in MWh after executing (dis-)charging actions in the current time step"
+          unit: MWh
+          isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+      DispatchMultiplier:
+        MetaData:
+          description: "Multiplier applied to energy when planning dispatch to account for actions by other (competing) flexibility traders."
+          unit: 1
+          isAbout: [{name: "simultaneous with", "@id": "RO_0002082"}, {name: "net capacity factor", "@id": "OEO_00240016"}]
+    MetaData:
+      description: "Trader that operates a generic flexibility device, e.g., a battery storage, pumped-hydro storage, load shifting, heat pumps..."
+      subject: [{name: "flexibility", "@id": "OEO_00360007"}, {name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "trading", "flexibility"]
+
+  HouseholdPvTraderExternal:
+    Attributes:
+      InstalledGenerationPowerInMW:
+        AttributeType: double
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Peak electricity generation capacity in MW of all households managed by the trader"
+          unit: MW
+          isAbout: [{name: "power capacity", "@id": "OEO_00010257"}]
+      LoadInMW:
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Base household consumption pattern in MW without storage application of all households managed by the trader"
+          unit: MWh/h
+          isAbout: [{name: "time series", "@id": "OEO_00030034"}, {name: "electricity demand", "@id": "OEO_00320062"}]
+      GenerationProfile:
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Relative electricity generation profile (values between 0 and 1) of the households managed by the trader"
+          unit: 1
+          isAbout: [{name: "yield profile", "@id": "OEO_00140139"}, {name: "photovoltaic cell", "@id": "OEO_00000032"}]
+      ServiceUrl:
+        AttributeType: string
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "The URL pointing to the machine-learning model's API endpoint that provides the required prediction service"
+          isAbout: [{name: "identifier", "@id": "http://purl.org/dc/elements/1.1/identifier"}]
+      ModelId:
+        AttributeType: string
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "The identifier of the machine-learning model to use for prediction"
+      ForecastPeriodInHours:
+        AttributeType: integer
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Number of hours to the future at which the forecast is used. Must be smaller or equal to that of the MarketForecaster."
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      PredictionWindows:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Input parameters to the machine-learning-based load-prediction model"
+        NestedAttributes:
+          EnergyGenerationForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future PV generation values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          EnergyGenerationBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past PV generation values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          StoredEnergyForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future stored energy values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          StoredEnergyBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past stored energy values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityConsumptionForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future electricity consumption values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityConsumptionBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past electricity consumption values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityPriceForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future electricity price values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityPriceBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past electricity price values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          GridInteractionBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past grid interaction values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      Device: *Device_G_Device
+      Policy: *EndUserTariff_G_Policy
+      BusinessModel: *EndUserTariff_G_BusinessModel
+    Products:
+      PriceForecastRequest: *ForecastClient_P_PriceForecastRequest
+      Bids: *DamTrader_P_Bids
+    Outputs:
+      AwardedDemandInMWh:
+        MetaData:
+          description: "Amount of energy awarded in MWh to be delivered to households from the grid"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedSupplyInMWh:
+        MetaData:
+          description: "Amount of energy awarded in MWh to be provided by households to the grid"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "This trader sells and buys electricity generated by or required by households that have a installed generation device (e.g. photovoltaics) and an electricity storage unit."
+      subject: [{name: "household sector", "@id": "OEO_00000214"}, {name: "trader", "@id": "OEO_00040005"}, {name: "PV panel", "@id": "OEO_00000348"}]
+      keywords: ["electricity", "trading", "household", "prosumer"]
+
+  EvTraderExternal:
+    Attributes:
+      ForecastPeriodInHours:
+        AttributeType: integer
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Number of hours to the future at which the forecast is used. Must be smaller or equal to that of the MarketForecaster."
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+      ServiceUrl:
+        AttributeType: string
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "The URL pointing to the machine-learning model's API endpoint that provides the required prediction service"
+          isAbout: [{name: "identifier", "@id": "http://purl.org/dc/elements/1.1/identifier"}]
+      ModelId:
+        AttributeType: string
+        Mandatory: false
+        List: false
+        MetaData:
+          description: "The identifier of the machine-learning model to use for prediction"
+      AggregatedAvailableChargingPowerInMW:
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "The electric vehicle fleet's total electric charging power in MW"
+          unit: MW
+          isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}, {name: "maximum", "@id": "OEO_00140073"}]
+      AggregatedElectricConsumptionInMWH:
+        AttributeType: time_series
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "The electric vehicle fleet's total electricity consumption in MWh"
+          unit: MWh
+          isAbout: [{name: "electricity demand", "@id": "OEO_00320062"}]
+      PredictionWindows:
+        AttributeType: block
+        Mandatory: true
+        List: false
+        MetaData:
+          description: "Input parameters to the machine-learning-based load-prediction model"
+        NestedAttributes:
+          ElectricityPriceForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future electricity price values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityPriceBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past electricity price values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ChargingPowerForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future charging power values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ChargingPowerBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past charging power values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityConsumptionForwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of future electricity consumption values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          ElectricityConsumptionBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past electricity consumption values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+          LoadPredictionBackwardWindow:
+            AttributeType: integer
+            Mandatory: true
+            List: false
+            MetaData:
+              description: "Number of past load values to consider during forecasting"
+              unit: 1
+              isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+    Products:
+      PriceForecastRequest: *ForecastClient_P_PriceForecastRequest
+      Bids: *DamTrader_P_Bids
+    Outputs:
+      OfferedChargePriceInEURperMWH:
+        MetaData:
+          description: "Maximum price in EUR per MWh willing to pay for charging electric vehicles"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      OfferedDischargePriceInEURperMWH:
+        MetaData:
+          description: "Minimum Price in EUR per MWh for discharging electric vehicles"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      AwardedChargeEnergyInMWH:
+        MetaData:
+          description: "Amount of energy awarded in MWh to charge electric vehicles"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedDischargeEnergyInMWH:
+        MetaData:
+          description: "Amount of energy awarded in MWh to discharge electric vehicles"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      StoredEnergyInMWH:
+        MetaData:
+          description: "Energy in MWh currently stored in the electric vehicles"
+          unit: MWh
+          isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "A Trader that sells and buys energy utilising a fleet of electric vehicles."
+      subject: [{name: "household sector", "@id": "OEO_00000214"}, {name: "trader", "@id": "OEO_00040005"}, {name: "battery electric vehicle", "@id": "OEO_00010024"}]
+      keywords: ["electricity", "trading", "household", "electric vehicle"]
+
+
+  HeuristicStorageTrader:
+    Attributes:
+      Device: *GenericDevice_G_Device
+      SchedulingHorizonInHours:
+        MetaData:
+          description: "Number time length each created schedule is viable in hours; should be significantly larger than the flexibilities energy-to-power ratio."
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+        AttributeType: double
+        Mandatory: true
+        List: false
+      PlanningHorizonInHours:
+        MetaData:
+          description: "Foresight time length in hours. Must be smaller or equal to that of the contracted Forecaster."
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+        AttributeType: double
+        Mandatory: true
+        List: false
+      OperationPeriodInHours:
+        MetaData:
+          description: "Time interval used for bidding and dispatch planning."
+          unit: h
+          isAbout: [{name: "time span", "@id": "OEO_00030035"}]
+        AttributeType: double
+        Mandatory: true
+        List: false
+      AssessmentFunctionPrefactors:
+        AttributeType: double
+        Mandatory: true
+        List: true
+        MetaData:
+          description: "Prefactors `a`,`b`,`c`, ... of a polynomial `a + bx + cx² + ...`, where `x` is the difference between the hourly price and the price median. Higher prefactors favour (dis-)charge at more extreme prices."       
+          unit: 1
+    Products:
+      ForecastRegistration: *SensitivityForecastClient_P_ForecastRegistration
+      NetAward: *SensitivityForecastClient_P_NetAward
+      SensitivityRequest: *SensitivityForecastClient_P_SensitivityRequest
+      Bids: *DamTrader_P_Bids
+    Outputs:
+      OfferedEnergyInMWH: *DamTrader_O_OfferedEnergy
+      RequestedEnergyInMWH: *DamTrader_O_RequestedEnergy
+      AwardedEnergyInMWH: *DamTrader_O_AwardedEnergy
+      VariableCostsInEUR:
+        MetaData:
+          description: "Variable operation and maintenance costs in EUR"
+          unit: EUR
+          isAbout: [{name: "variable production cost", "@id": "OEO_00020146"}]
+      ReceivedMoneyInEUR:
+        MetaData:
+          description: "Total received money in EUR"
+          unit: EUR
+          isAbout: [{name: "market revenue", "@id": "OEO_00020128"}]
+      OfferedChargePriceInEURperMWH:
+        MetaData:
+          description: "Offered price for charging in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      OfferedDischargePriceInEURperMWH:
+        MetaData:
+          description: "Offered price for discharging in EUR per MWh"
+          unit: EUR/MWh
+          isAbout: [{name: "bid", "@id": "OEO_00140121"}, {name: "electricity price", "@id": "OEO_00020117"}]
+      AwardedChargeEnergyInMWH:
+        MetaData:
+          description: "Total amount of charge energy awarded in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      AwardedDischargeEnergyInMWH:
+        MetaData:
+          description: "Total amount of discharge energy awarded in MWh"
+          unit: MWh
+          isAbout: [{name: "award", "@id": "OEO_00140122"}, {name: "electrical energy", "@id": "OEO_00000139"}]
+      StoredEnergyInMWH:
+        MetaData:
+          description: "Amount of energy in storage in MWh after executing (dis-)charging actions in the current time step"
+          unit: MWh
+          isAbout: [{name: "electrical energy", "@id": "OEO_00000139"}]
+    MetaData:
+      description: "Trader that operates an energy storage device, e.g., a battery storage, pumped-hydro storage using heuristic dispatch strategies."
+      subject: [{name: "flexibility", "@id": "OEO_00360007"}, {name: "trader", "@id": "OEO_00040005"}]
+      keywords: ["electricity", "trading", "flexibility"]
+      

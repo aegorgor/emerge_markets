@@ -1,0 +1,62 @@
+Metadata:
+  runId: "Germany2019"
+  description: "AMIRIS back-testing scenario for German day-ahead electricity market in 2019"
+  url: "https://gitlab.com/dlr-ve/esy/amiris/examples/"
+  version: "5.0.0"
+  amirisVersion: "3.6.0"
+  output:
+    publicationDate: "2025-07-31"
+    embargoPeriod: None
+    licenses: "CC-BY 4.0"
+
+Schema: !include "schema.yaml"
+
+GeneralProperties:
+  RunId: 1
+  Simulation:
+    StartTime: 2018-12-31_23:58:00
+    StopTime: 2019-12-31_23:58:00
+    RandomSeed: 1
+
+Agents: !include ["agents/*.yaml", "Agents"]
+
+Contracts: !include ["contracts/*.yaml", "Contracts"]
+
+StringSets:
+  FuelType:
+    Values: 
+      OIL:
+        MetaData:
+          Description: "Fuel type oil"
+          OEONearestConcept: OEO_00010316
+      HARD_COAL:
+        MetaData:
+          Description: "Fuel type hard coal"
+          OEONearestConcept: OEO_00000204
+      LIGNITE:
+        MetaData:
+          Description: "Fuel type lignite"
+          OEONearestConcept: OEO_00000251
+      NUCLEAR:
+        MetaData:
+          Description: "Fuel type nuclear"
+          OEONearestConcept: OEO_00000302
+      WASTE:
+        MetaData:
+          Description: "Fuel type waste"
+          OEONearestConcept: OEO_00000439
+      NATURAL_GAS:
+        MetaData:
+          Description: "Fuel type natural gas"
+          OEONearestConcept: OEO_00000292
+      HYDROGEN:
+        MetaData:
+          Description: "Fuel type hydrogen gas"
+      BIOMASS:
+        MetaData:
+          Description: "Fuel type biogas or other bio-fuels"
+      OTHER:
+        MetaData:
+          Description: "Any other type of fuel"
+  PolicySet:
+    Values: ['PVRooftop', 'WindOn', 'WindOff', 'RunOfRiver', 'OtherPV', 'Biogas', 'Undefined', 'PvFit', 'PvMpvarCluster1', 'PvMpvarCluster2', 'PvMpvarCluster3', 'PvMpvarCluster4', 'PvMpvarCluster5', 'WindOnFit', 'WindOnMpvarCluster1', 'WindOnMpvarCluster2', 'WindOnMpvarCluster3', 'WindOnMpvarCluster4', 'WindOnMpvarCluster5', 'WindOffMpvarCluster1', 'WindOffMpvarCluster2', 'WindOffMpvarCluster3', 'WindOffMpvarCluster4',]

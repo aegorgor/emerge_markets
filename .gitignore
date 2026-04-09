@@ -13,3 +13,33 @@ Germany2019Alt/timeseries/wind_offshore_profile.csv
 Germany2019Alt/timeseries/wind_onshore_profile.csv
 Germany2019Alt/timeseries/demand/demand_high_income.csv
 Germany2019Alt/timeseries/demand/demand_low_income.csv
+
+# ── matrix_analysis: AMIRIS simulation outputs ───────────────────────────────
+matrix_analysis/germany_baseline/
+matrix_analysis/low_co2/
+matrix_analysis/high_co2/
+matrix_analysis/no_support/
+matrix_analysis/no_support_low_co2/
+matrix_analysis/no_support_high_co2/
+matrix_analysis/mpvar_reduced/
+matrix_analysis/mpvar_reduced_low_co2/
+matrix_analysis/mpvar_reduced_high_co2/
+matrix_analysis/fit_scenario/
+matrix_analysis/fit_only_low_co2/
+matrix_analysis/fit_only_high_co2/
+
+# ── matrix_analysis: large timeseries profiles ───────────────────────────────
+matrix_analysis/Germany2019/timeseries/solar_profile.csv
+matrix_analysis/Germany2019/timeseries/wind_onshore_profile.csv
+matrix_analysis/Germany2019/timeseries/wind_offshore_profile.csv
+matrix_analysis/Germany2019/timeseries/run_of_river_profile.csv
+matrix_analysis/Germany2019/timeseries/other_res_profile.csv
+matrix_analysis/Germany2019/timeseries/biomass_profile.csv
+matrix_analysis/Germany2019/timeseries/load.csv
+
+# ── misc ─────────────────────────────────────────────────────────────────────
+*.jar
+*.bak
+amiris-env/
+__pycache__/
+*.pyc

@@ -1,0 +1,90 @@
+AgentGroups:
+  - &exchange 1
+  - &forecaster 6
+  - &marketer 13
+  - &renewables [10, 20, 50]
+
+Contracts:
+#################################
+# -- Registration --            #
+#################################
+  - SenderId: *renewables
+    ReceiverId: *marketer
+    ProductName: SetRegistration
+    FirstDeliveryTime: -37
+    Every: 1 year
+
+#################################
+# -- Forecasting --             #
+#################################
+  - SenderId: *forecaster
+    ReceiverId: *marketer
+    ProductName: ForecastRequest
+    FirstDeliveryTime: -26
+    Every: 1 hour
+
+  - SenderId: *marketer
+    ReceiverId: *renewables
+    ProductName: ForecastRequestForward
+    FirstDeliveryTime: -25
+    Every: 1 hour
+
+  - SenderId: *renewables
+    ReceiverId: *marketer
+    ProductName: MarginalCostForecast
+    FirstDeliveryTime: -22
+    Every: 1 hour
+
+  - SenderId: *marketer
+    ReceiverId: *forecaster
+    ProductName: BidsForecast
+    FirstDeliveryTime: -21
+    Every: 1 hour
+
+#################################
+# -- Bidding --                 #
+#################################
+  - SenderId: *exchange
+    ReceiverId: *marketer
+    ProductName: GateClosureInfo
+    FirstDeliveryTime: -30
+    Every: 1 hour
+
+  - SenderId: *marketer
+    ReceiverId: *renewables
+    ProductName: GateClosureForward
+    FirstDeliveryTime: -9
+    Every: 1 hour
+
+  - SenderId: *renewables
+    ReceiverId: *marketer
+    ProductName: MarginalCost
+    FirstDeliveryTime: -1
+    Every: 1 hour
+
+  - SenderId: *marketer
+    ReceiverId: *exchange
+    ProductName: Bids
+    FirstDeliveryTime: 0
+    Every: 1 hour
+
+#################################
+# -- Dispatch --                #
+#################################
+  - SenderId: *exchange
+    ReceiverId: *marketer
+    ProductName: Awards
+    FirstDeliveryTime: 4
+    Every: 1 hour
+
+  - SenderId: *marketer
+    ReceiverId: *renewables
+    ProductName: DispatchAssignment
+    FirstDeliveryTime: 5
+    Every: 1 hour
+
+  - SenderId: *marketer
+    ReceiverId: *renewables
+    ProductName: Payout
+    FirstDeliveryTime: 2626204
+    Every: 1 month

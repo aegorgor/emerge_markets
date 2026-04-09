@@ -1,0 +1,52 @@
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.bak
+
+# ── Virtual environment ───────────────────────────────────────────────────────
+amiris-env/
+venv/
+.venv/
+
+# ── AMIRIS binary (download separately) ──────────────────────────────────────
+*.jar
+
+# ── AMIRIS simulation output directories (12 runs × ~86 MB each) ─────────────
+germany_baseline/
+low_co2/
+high_co2/
+no_support/
+no_support_low_co2/
+no_support_high_co2/
+mpvar_reduced/
+mpvar_reduced_low_co2/
+mpvar_reduced_high_co2/
+fit_scenario/
+fit_only_low_co2/
+fit_only_high_co2/
+
+# ── Large hourly timeseries profiles ─────────────────────────────────────────
+# Canonical copies live in Germany2019/timeseries/ — excluded from *_config/
+# to avoid duplicating ~2 MB per generated scenario directory.
+# Run setup_matrix_scenarios.py to regenerate *_config/ directories.
+*_config/timeseries/solar_profile.csv
+*_config/timeseries/wind_onshore_profile.csv
+*_config/timeseries/wind_offshore_profile.csv
+*_config/timeseries/run_of_river_profile.csv
+*_config/timeseries/other_res_profile.csv
+*_config/timeseries/biomass_profile.csv
+*_config/timeseries/load.csv
+
+# Base scenario timeseries profiles (large hourly CSVs — same as Egor's pattern)
+Germany2019/timeseries/solar_profile.csv
+Germany2019/timeseries/wind_onshore_profile.csv
+Germany2019/timeseries/wind_offshore_profile.csv
+Germany2019/timeseries/run_of_river_profile.csv
+Germany2019/timeseries/other_res_profile.csv
+Germany2019/timeseries/biomass_profile.csv
+Germany2019/timeseries/load.csv
+
+# ── Exploratory / intermediate outputs ────────────────────────────────────────
+simple/
+co2_search_temp/
